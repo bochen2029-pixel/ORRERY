@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/someone.schema.json",
+  "title": "someone --json output envelope",
+  "description": "Machine-checkable schema for the someone tool's --json output. Matches contracts/someone.contract.md v1.1.0. The science validates real output against this and depends on nothing else.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "someone" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pop", "gens", "steps", "N", "k", "zombie_frac", "complexity", "mut_rate", "mut_str", "ensemble"],
+      "properties": {
+        "pop": { "type": "integer", "minimum": 16, "maximum": 8192 },
+        "gens": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "steps": { "type": "integer", "minimum": 100, "maximum": 5000 },
+        "N": { "type": "integer", "minimum": 32, "maximum": 1024 },
+        "k": { "type": "integer", "minimum": 1, "maximum": 1024 },
+        "zombie_frac": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "complexity": { "type": "string", "enum": ["L0", "L1", "L2", "L3"] },
+        "mut_rate": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "mut_str": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "ensemble": { "type": "integer", "minimum": 1, "maximum": 256 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gens_run", "normal_fit_final", "zombie_fit_final", "normal_fit_sd", "zombie_fit_sd",
+        "delta_fit", "normal_alive_final", "zombie_alive_final", "zombie_extinct_gen",
+        "mean_pure_gap", "winner", "tie_band", "win_rate", "p_value"
+      ],
+      "properties": {
+        "gens_run": { "type": "integer", "minimum": 0 },
+        "normal_fit_final": { "type": "number" },
+        "zombie_fit_final": { "type": "number" },
+        "normal_fit_sd": { "type": "number", "minimum": 0.0 },
+        "zombie_fit_sd": { "type": "number", "minimum": 0.0 },
+        "delta_fit": { "type": "number" },
+        "normal_alive_final": { "type": "number", "minimum": 0.0 },
+        "zombie_alive_final": { "type": "number", "minimum": 0.0 },
+        "zombie_extinct_gen": { "type": "integer", "minimum": -1 },
+        "mean_pure_gap": { "type": "number" },
+        "winner": { "type": "string", "enum": ["normal", "zombie", "tie"] },
+        "tie_band": { "type": "number", "minimum": 0.0 },
+        "win_rate": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "p_value": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-ZOMBIE-WINS", "G-NO-GAP"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

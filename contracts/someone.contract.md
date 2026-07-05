@@ -1,4 +1,4 @@
-# someone — Contract  v1.0.0
+# someone — Contract  v1.1.0
 
 ## Purpose
 Evolve a population of embodied agents whose recurrent state runs an encoder→bottleneck→decoder→predictor self-model, in a configurable complex world (lights, predators, food, day/night), and measure whether **self-modeling agents (a real bottleneck, k≪N, `pureGap`>0) out-survive/out-reproduce zombie agents (bottleneck bypassed, k=N, gapless)** under stakes (energy depletion, predator death). Tests the functional half of the Someone-Criterion's C2 (gap) and the zombie clause. Seeded from `C:\Users\user\Desktop\DSA\dak_evolution_complex.cu`.
@@ -39,6 +39,10 @@ Evolve a population of embodied agents whose recurrent state runs an encoder→b
 | mean_pure_gap | float | mean `pureGap` of normal agents (the realized C2 gap; should be >0 for normal, ~0 for zombie) |
 | winner | enum | "normal" \| "zombie" \| "tie" (by delta_fit vs tie-band) |
 | tie_band | float | \|delta_fit\| below this ⇒ tie (default 0.02) |
+| win_rate | float | **[v1.1.0]** fraction of ensemble replicas where normal beats zombie by > tie_band (per-replica delta > tie_band). A per-level "normal wins" claim is licensed only when this is significantly > 0.5. |
+| p_value | float | **[v1.1.0]** one-sided sign-test p that normal wins more than half the replicas: P(X≥wins) for X~Binomial(wins+losses, 0.5), counting only non-tie replicas. 1.0 if all replicas tie. |
+
+**Statistical licensing (v1.1.0, from D-DAK-RNG / the science's citability bar):** a single-invocation result is one complexity level over `--ensemble` seeded replicas. Report `winner` from `delta_fit` vs `tie_band`, but treat the level's verdict as **corpus-grade only when `p_value < 0.05`** (or the ensemble sd-based CI on `delta_fit` excludes 0); otherwise the honest per-level verdict is **TIE**. `--ensemble 1` yields a point estimate with no significance (win_rate∈{0,1}, p_value∈{0.5,1.0}) — not citable; the science calls `--ensemble ≥20` for a claim.
 
 **Guard (from the round-01 analysis, mandatory):** do NOT report the raw `normal/zombie` fitness *ratio* — post-extinction it is a division artifact (~1e10). Report `delta_fit` and alive-counts. Do not treat `avgGap→1` as evidence; it is definitional for a saturated bottleneck.
 
@@ -54,7 +58,9 @@ Evolve a population of embodied agents whose recurrent state runs an encoder→b
 Exit `0` when normal wins or ties with a real gap; exit `1` when a gate fires (a genuine result: e.g. at L0 the round-01 analysis found zombie-wins — that is exit 1, a *finding*, not an error); exit `2` on bad params/CUDA error.
 
 ## Determinism
-Declared output is a deterministic function of (all params, seed). Per-thread curand seeded from (seed+replica, agentId). Pin block/grid config; evolution (selection/mutation) uses a seeded host RNG. **Caveat:** GPU floating-point reduction order must be fixed (no atomics in the fitness reduction path, or a fixed-order tree reduction) so declared output is bit-stable on sm_89. Document any residual cross-arch tolerance in MODULE.md. Timing and progress logs are nondeclared.
+Declared output is a deterministic function of (all params, seed). The RNG *mechanism* is an implementation detail (not contract-pinned); the *guarantee* is: same (params, seed) ⇒ byte-identical declared output on sm_89. The v1.1.0 implementation uses a seeded host `std::mt19937_64` for init/evolution (replica r uses seed+r, fixed draw order) and a **stateless counter-based Gaussian** for per-step neuron noise keyed by (seed+replica, agentId, neuronId, step); env layout via a purpose-keyed splitmix64. Pin block/grid config. **Caveat:** GPU floating-point reduction order is fixed (no float atomics in any reduction feeding declared output — fixed-order shared-memory tree reduction on device, index-order Kahan sum on host) so declared output is bit-stable on sm_89. Any residual cross-arch tolerance is documented in MODULE.md. Timing and progress logs are nondeclared.
+
+**Golden hash domain (v1.1.0):** the golden hash is `blake2b` over the *canonical serialization* of `{seed, params, result, gates, verdict}` only — `tool`, `version`, and `notes` are excluded so a behavior-preserving kernel rewrite (which may bump `version`) still reproduces the golden. Floats are serialized at fixed `%.6f`; object keys emit in a fixed declared order. This canonical form is what `--golden` recomputes and compares.
 
 ## Golden
 params: `someone.exe --pop 200 --gens 200 --steps 800 --N 256 --k 64 --zombie-frac 0.5 --complexity L3 --ensemble 4 --seed 20260705 --json`
@@ -62,4 +68,5 @@ recorded: `goldens/someone/` (canonical-serialized declared JSON + its blake2b h
 (Note: the golden is a *fast* config — gens 200, steps 800 — so `--golden` runs in well under the CI budget. The science calls larger configs for real experiments; those carry their own `result.lock`.)
 
 ## Change log
-- v1.0.0 — initial contract. Ports dak_evolution_complex.cu to the headless envelope; adds `--ensemble`, `--complexity` enum, `--k` sweepable, deterministic reductions, gates, JSON schema. The round-01 wounded result (strong "advantage grows with complexity" NOT supported; weaker "gap wins in threat/deprivation regimes" stands) is the behavior to reproduce and sharpen with ensembles.
+- **v1.1.0** — 2026-07-05 (first implementation; MINOR, additive; see DECISIONS D-009). Adds two additive `result` fields — `win_rate` and `p_value` (one-sided sign test) — so a per-level verdict carries its significance in the declared output (the science's citability bar, D-DAK-RNG; round-01's fatal flaw was N=1/level with no significance). Old v1.0.0 callers are unaffected (superset output). Also (clarifications, non-behavioral): the Determinism section is made RNG-mechanism-neutral to match the impl (host mt19937_64 + stateless counter Gaussian + purpose-keyed splitmix64, no curand — removes the prototype's per-neuron state-writeback race by construction) and the **golden hash domain** is pinned to `{seed,params,result,gates,verdict}`. v1.0.0 was never implemented/frozen (no golden, no caller), so this bump is safe and models correct semver discipline for the template. The golden is frozen at v1.1.0.
+- v1.0.0 — initial contract (founding session, spec-only, unimplemented). Ports dak_evolution_complex.cu to the headless envelope; adds `--ensemble`, `--complexity` enum, `--k` sweepable, deterministic reductions, gates, JSON schema. The round-01 wounded result (strong "advantage grows with complexity" NOT supported; weaker "gap wins in threat/deprivation regimes" stands) is the behavior to reproduce and sharpen with ensembles.
