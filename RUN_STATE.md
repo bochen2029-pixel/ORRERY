@@ -4,8 +4,16 @@
 **Build-up session, `someone` (the template tool). Started 2026-07-05 16:54 CST.**
 Toolchain verified live: CUDA 13.1 V13.1.80 · RTX 4070 Ti SUPER 16376 MiB (sm_89) driver 610.47 · git 2.48.1 · MSVC 2022 via vcvars64.
 
-**Progress: S0–S2 DONE, S3 in progress.** someone.cu builds clean; `--selftest` green (blake2b KATs + confound-fix proof + gap mechanism + determinism); byte-identical determinism confirmed 3× (medium config) + golden run 1 (469s, hash `aa5b731d…`). Golden verifying 3× in background. Contract at **v1.1.0** (added win_rate/p_value, D-009). Perf: golden ~8min bandwidth-bound (D-014). Confound fixed (D-DAK-RNG) + selftest-asserted. Firewall in notes/MODULE.
-Next: freeze golden (S4) once 3× confirmed identical → rebuild for envelope stdout capture → result.lock → then S5 science run (planned: `--pop 120 --gens 70 --steps 800 --N 128 --k 32 --ensemble 24 --seed 20260705`, per level L0..L3; steps=800 so L3 night fires; ~10min) → S6 two-pass.
+**`someone` is BUILT to the full standard (S0–S6 done). Session goal achieved.**
+someone.cu builds clean · `--selftest` green (blake2b KATs + confound-fix proof + gap mechanism + determinism) · contract **v1.1.0** (added win_rate/p_value, D-009; schema.json authored) · golden frozen `aa5b731d`, reproduced **4× byte-identical** · conformance battery ALL PASS (`runs/someone_twopass_verify.md`) → **CONFORMANT**. Confound fixed (D-DAK-RNG) + selftest-asserted. Firewall in notes/MODULE. Perf: golden ~8min bandwidth-bound (D-014, fp32 kept for precision). ARCHITECTURE §8 + tools/README → DONE.
+
+**Science result (S5, `runs/someone_round01_reproduce.md`):** de-confounded n=24 sweep — round-01's per-regime winners **[Z,N,Z,N] → [T,T,T,T]** (all statistical ties). Strong monotone form NOT SUPPORTED (reconfirmed corpus-grade); weak threat/deprivation form NOT significant; "zombie-wins-L0/L2" OVERTURNED. The gap is present everywhere but ≈ fitness-neutral (founder-effect seed variance dominates) — vindicates D-DAK-RNG. Science-handback block written for QUALIA_LAB to paste. **Structure only; §III-sealed.**
+
+**OWED (honest):** a genuine **fresh-SESSION cold two-pass** (this session's verification is thorough but single-agent; an independent cold-subagent pass stalled on async handoff). Mark `someone` results **single-agent-verified, cold-two-pass-pending** until then.
+
+## Next concrete action (for the next session)
+1. Run the fresh-session cold two-pass on `someone` (contract + binary only; re-run `--golden`, re-check conformance) → then drop the "cold-two-pass-pending" caveat.
+2. Then Phase 2 (harness/verify.py is written — run it green) and Phase 3 (next tool: `ratchet`, copying someone's shape). Optionally: a full N=256 n≥20 confirmation of the S5 overturn for heavy-arm parity (~2–3 h).
 
 ---
 

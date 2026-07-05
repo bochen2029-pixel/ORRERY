@@ -19,3 +19,7 @@ tools/**/_*.csv
 # Editor
 .vs/
 *.swp
+
+# Python
+__pycache__/
+*.pyc

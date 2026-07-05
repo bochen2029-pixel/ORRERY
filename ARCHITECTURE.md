@@ -104,7 +104,7 @@ Seeded from Bo's existing engines (`C:\Users\user\Desktop\DSA\`, `C:\ASTRA-7`, `
 
 | Tool | Lang | What it measures | Seeded from | Status |
 |---|---|---|---|---|
-| **someone** | C++/CUDA | Evolutionary Someone-Criterion: encoder/bottleneck/decoder/predictor agents (C2 gap = `pureGap`), viability/stakes/death (C3), zombie-vs-normal ablation; sweep k → is the band an *evolved* optimum? | `dak_evolution_complex.cu` | **FIRST BUILD — the template** |
+| **someone** | C++/CUDA | Evolutionary Someone-Criterion: encoder/bottleneck/decoder/predictor agents (C2 gap = `pureGap`), viability/stakes/death (C3), zombie-vs-normal ablation; sweep k → is the band an *evolved* optimum? | `dak_evolution_complex.cu` | **DONE v1.1.0** (golden `aa5b731d`, det. 3×; the template) |
 | **ratchet** | C++/CUDA | Branching / phase transition; the (1−p)ρ=p critical point at billions of trials | `criticality_cuda.cu`, `toy_rr_frontier_ratchet.py` | planned |
 | **algebra** | C++/CUDA (cuSOLVER) | Crossed-product entropy-from-observer (F16); relative-entropy finiteness vs cutoff | `toy_ql_crossed_product.py` | planned |
 | **posit** | Python | Parsimony auditor (Q3); physics-layer vs overlay posit budget | `posit_counter.py` | port (Python-is-right) |

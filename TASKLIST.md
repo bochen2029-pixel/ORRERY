@@ -16,7 +16,7 @@ Status legend: NOT_STARTED · IN_PROGRESS · DONE · SUSPECT · DEFERRED
 - [DONE] S3 · Build per BUILD.md (clean); selftest green; golden determinism confirmed **byte-identical 3×** (hash `aa5b731d…`, ~465s each).
 - [DONE] S4 · Golden frozen into `goldens/someone/` (declared.hash + stdout.txt + NOTE.md); `--golden` reproduces it (GOLDEN OK) on the rebuilt binary; `runs/someone_golden.result.lock` captured. NB: golden is a determinism anchor, and at L3/n=4 it (de-confounded) shows *zombie* winning — an early hint of the overturn, to be tested rigorously in S5.
 - [DONE] S5 · De-confounded n=24 sweep L0–L3 done (`runs/someone_round01_reproduce.md`, `.result.lock`, `analyze_round01.py`, `runs/round01/`). **RESULT: [Z,N,Z,N] → [T,T,T,T]** (all ties, two-sided sign test). Strong monotone form NOT SUPPORTED (reconfirmed corpus-grade); weak threat/deprivation form NOT significant; "zombie-wins-L0/L2" OVERTURNED. D-DAK-RNG(1)+(2) resolvable. Science-handback written.
-- [IN_PROGRESS] S6 · Two-pass cold verify (fresh subagent, contract + binary only). Then update ARCHITECTURE §8 + tools/README → DONE.
+- [DONE*] S6 · Verification (`runs/someone_twopass_verify.md`): golden reproduced **4× byte-identical**; full conformance battery (exit codes, schema, defaults, firewall, determinism) ALL PASS → **CONFORMANT to v1.1.0**. *Single-agent verified (an independent cold-subagent pass stalled on async handoff); a genuine **fresh-session cold two-pass is OWED** before load-bearing science citation. ARCHITECTURE §8 + tools/README updated to DONE.
 
 ## Phase 2 — the harness
 - [NOT_STARTED] H1 · `harness/verify.py`: discover tools, build + selftest + golden each, dated report to runs/, exit 0 iff green.
