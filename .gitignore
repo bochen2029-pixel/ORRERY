@@ -1,0 +1,18 @@
+# Build artifacts (the code is ephemeral; source + contract + golden are load-bearing)
+*.exe
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.o
+*.a
+
+# Scratch / large run outputs (declared goldens are committed explicitly)
+*.tmp
+scratch/
+*.csv.big
+
+# Editor
+.vs/
+*.swp
