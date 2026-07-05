@@ -1,0 +1,32 @@
+# result.lock — someone golden (the frozen behavioral anchor)
+# Any cited result reconstructs from its lock. This one pins the golden freeze.
+
+tool:            someone
+version:         1.1.0
+result_kind:     golden (determinism anchor; NOT a science claim — see runs/someone_round01_reproduce.md)
+
+# --- binary / toolchain ---
+binary_blake2b:  237d185f623ef741d6e12ff83d73bedda6dd02ebf429db585f5d32a3ccacee32
+binary_bytes:    441344
+gpu_arch:        sm_89
+gpu_device:      NVIDIA GeForce RTX 4070 Ti SUPER (16376 MiB, driver 610.47)
+cuda:            13.1 (V13.1.80)
+host_compiler:   MSVC 2022 (vcvars64)
+build_cmd:       nvcc -O3 -arch=sm_89 someone.cu -o someone.exe
+
+# --- invocation ---
+seed:            20260705
+ensemble_n:      4
+params:          pop=200 gens=200 steps=800 N=256 k=64 zombie_frac=0.5 complexity=L3 mut_rate=0.02 mut_str=0.1
+cli:             someone.exe --pop 200 --gens 200 --steps 800 --N 256 --k 64 --zombie-frac 0.5 --complexity L3 --ensemble 4 --seed 20260705 --json
+
+# --- declared output ---
+declared_blake2b: aa5b731da7b5e26827471af1e5aa6b38809233793591da71469dc3353bc24544
+determinism:      byte-identical across 3 independent --golden runs (465s, 465s, 464s) on sm_89
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f (D-013)
+verdict:          fail (gate G-ZOMBIE-WINS fired: delta_fit=-0.456938 at L3/n=4 — a noisy point, not a claim)
+stdout:           goldens/someone/stdout.txt
+
+# --- provenance ---
+run_marker:       ORRERY someone golden freeze (S4); repo commit = the commit adding this lock + goldens/someone/
+notes:            Sims prove structure (does the gap confer fitness), never acquaintance (qualia). III-sealed.

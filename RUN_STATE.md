@@ -2,8 +2,10 @@
 
 ## Current state
 **Build-up session, `someone` (the template tool). Started 2026-07-05 16:54 CST.**
-Foundation (Phase 0) is complete on disk. Orientation done (STEP 0). Beginning Phase 1 (S1–S6).
 Toolchain verified live: CUDA 13.1 V13.1.80 · RTX 4070 Ti SUPER 16376 MiB (sm_89) driver 610.47 · git 2.48.1 · MSVC 2022 via vcvars64.
+
+**Progress: S0–S2 DONE, S3 in progress.** someone.cu builds clean; `--selftest` green (blake2b KATs + confound-fix proof + gap mechanism + determinism); byte-identical determinism confirmed 3× (medium config) + golden run 1 (469s, hash `aa5b731d…`). Golden verifying 3× in background. Contract at **v1.1.0** (added win_rate/p_value, D-009). Perf: golden ~8min bandwidth-bound (D-014). Confound fixed (D-DAK-RNG) + selftest-asserted. Firewall in notes/MODULE.
+Next: freeze golden (S4) once 3× confirmed identical → rebuild for envelope stdout capture → result.lock → then S5 science run (planned: `--pop 120 --gens 70 --steps 800 --N 128 --k 32 --ensemble 24 --seed 20260705`, per level L0..L3; steps=800 so L3 night fires; ~10min) → S6 two-pass.
 
 ---
 

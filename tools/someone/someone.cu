@@ -753,20 +753,22 @@ static bool read_golden_hash(std::string& out){
 }
 static int run_golden(){
     Params P = golden_params();
-    std::string declared;
-    run_config(P, false, &declared);
+    Result R = compute_result(P, nullptr);
+    bool gate = R.g_zombie || R.g_nogap;
+    std::string verdict = gate ? "fail" : "pass";
+    std::string declared = declared_object(P,R,verdict);
     std::string hash = blake2b_hex(declared);
+    // stdout = the full declared envelope (so `--golden >stdout.txt` captures goldens/someone/stdout.txt).
+    printf("%s\n", full_envelope(P,R,verdict).c_str());
+    // stderr = the reproduction verdict. Exit 0 = golden reproduced (hash matches), 1 = mismatch.
     std::string frozen;
     if(read_golden_hash(frozen)){
-        if(hash==frozen){ printf("GOLDEN OK  blake2b=%s\n", hash.c_str()); return 0; }
-        else { fprintf(stderr,"GOLDEN MISMATCH\n  got   %s\n  want  %s\n", hash.c_str(), frozen.c_str());
-               printf("GOLDEN FAIL blake2b=%s\n", hash.c_str()); return 1; }
-    } else {
-        // bootstrap (pre-S4): no frozen golden yet — print the hash so it can be frozen.
-        fprintf(stderr,"GOLDEN NOT FROZEN (bootstrap) — freeze this hash into goldens/someone/declared.hash\n");
-        printf("GOLDEN BOOTSTRAP blake2b=%s\n", hash.c_str());
-        return 0;
+        if(hash==frozen){ fprintf(stderr,"GOLDEN OK blake2b=%s\n", hash.c_str()); return 0; }
+        fprintf(stderr,"GOLDEN MISMATCH\n  got   %s\n  want  %s\n", hash.c_str(), frozen.c_str());
+        return 1;
     }
+    fprintf(stderr,"GOLDEN NOT FROZEN (bootstrap) blake2b=%s\n  freeze into goldens/someone/declared.hash\n", hash.c_str());
+    return 0;
 }
 
 // ------------------------------------------------------------------ selftest

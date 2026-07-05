@@ -12,6 +12,9 @@
 *.tmp
 scratch/
 *.csv.big
+tools/**/_*.txt
+tools/**/_*.json
+tools/**/_*.csv
 
 # Editor
 .vs/
