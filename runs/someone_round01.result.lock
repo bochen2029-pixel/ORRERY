@@ -1,0 +1,36 @@
+# result.lock — someone round-01 reproduction (S5, the citable science run)
+# Reproduces runs/someone_round01_reproduce.md. Structure only; §III-sealed.
+
+tool:            someone
+version:         1.1.0
+result_kind:     science (de-confounded, n=24 complexity sweep; F6/F8 in-silico, D-DAK-RNG)
+
+# --- binary / toolchain ---
+binary_blake2b:  237d185f623ef741d6e12ff83d73bedda6dd02ebf429db585f5d32a3ccacee32
+gpu_arch:        sm_89
+gpu_device:      NVIDIA GeForce RTX 4070 Ti SUPER (16376 MiB, driver 610.47)
+cuda:            13.1 (V13.1.80)
+host_compiler:   MSVC 2022 (vcvars64)
+
+# --- invocation (per level L0..L3) ---
+seed:            20260705
+ensemble_n:      24
+params:          pop=120 gens=70 steps=800 N=128 k=32 zombie_frac=0.5 mut_rate=0.02 mut_str=0.1
+runner:          runs/someone_round01_run.ps1
+analysis:        runs/analyze_round01.py
+cli_template:    someone.exe --pop 120 --gens 70 --steps 800 --N 128 --k 32 --zombie-frac 0.5 --ensemble 24 --seed 20260705 --complexity L{0,1,2,3} --json --csv runs/round01/round01_L{n}.csv
+
+# --- outputs (blake2b of each full JSON envelope) ---
+output_L0_blake2b: cd88be8bc3bbe7024a4a2a7afb949ec74240fb290295969e8314a3f5ddd0d606
+output_L1_blake2b: 43cf815eef66998de9ff661df430dfcfa44dda5aa22f1cf50fa9729d5a34aa8a
+output_L2_blake2b: 202c67791cb949d99c1884ea21ff81374d45bcb5bd5f5445f2956ccf4466a042
+output_L3_blake2b: edea8c2d50f5aaee294e87dc0924c82e52af3105a22eb127439ff2a61974bd9d
+
+# --- verdict (two-sided sign test, n=24) ---
+licensed_sequence:  [T,T,T,T]   # L0..L3, no significant winner at any level
+strong_monotone:    NOT SUPPORTED (reconfirmed corpus-grade; mean_delta non-monotone)
+weak_threat_depriv: NOT SIGNIFICANT (L1 predators normal-lean 14/10 p=0.27; L3 night 11/12 n.s.)
+zombie_wins_L0_L2:  OVERTURNED (L0 p_zombie=0.076 n.s.; L2 12/12 dead tie)
+determinism:        whole ensemble byte-reproducible from seed (structural; golden proven 3x identical)
+run_marker:         ORRERY someone S5; repo commit = the commit adding this lock
+notes:              Sims prove structure (does the gap confer fitness), never acquaintance. §III-sealed.

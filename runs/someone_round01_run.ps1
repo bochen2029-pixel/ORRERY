@@ -24,4 +24,4 @@ foreach ($L in "L0","L1","L2","L3") {
         $L,$code,$r.delta_fit,$r.winner,$r.win_rate,$r.p_value,$r.mean_pure_gap,`
         $r.zombie_extinct_gen,$r.normal_alive_final,$r.zombie_alive_final)
 }
-Write-Output "DONE — per-level JSON + CSV in $out"
+Write-Output "DONE - per-level JSON + CSV in $out"
