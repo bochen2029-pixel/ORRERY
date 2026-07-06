@@ -1,5 +1,7 @@
 # RUN_STATE — ORRERY
 
+> 🧠 **REHYDRATION / FULL RECOLLECTION:** for the complete session memory + continuation prompt + rehydration procedure (read-order, verify-commands, all 5 tools, decisions D-009..D-018, gotchas, the tail verbatim), read **[`SESSION_MEMORY.md`](SESSION_MEMORY.md)** first. It is the reconstitution pointer. Trust the files + git over any recalled narrative; verify with `git log/status` and a tool's `--selftest`/`--golden` before resuming.
+
 ## Current state
 **Build-up session, `someone` (the template tool). Started 2026-07-05 16:54 CST.**
 Toolchain verified live: CUDA 13.1 V13.1.80 · RTX 4070 Ti SUPER 16376 MiB (sm_89) driver 610.47 · git 2.48.1 · MSVC 2022 via vcvars64.
