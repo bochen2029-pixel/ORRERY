@@ -13,10 +13,12 @@ someone.cu builds clean · `--selftest` green (blake2b KATs + confound-fix proof
 
 **Phase 2 harness GREEN**: `harness/verify.py` ran GREEN from an independent cold-context subagent (someone build/selftest/golden all OK — `runs/verify_20260705_190525.md`); it auto-discovers ratchet too. So `someone`'s golden now has an **independent cold-context reproduction** (via verify.py), strengthening its verification beyond single-agent.
 
-**OWED (honest):** a fresh-SESSION cold two-pass for BOTH tools (someone: has a cold golden-reproduction via verify.py + a single-agent conformance battery, but a full independent conformance pass is still nice-to-have; ratchet: owed). Mark both **cold-two-pass-pending** for full citation-grade trust.
+**`someone` cold two-pass: DONE.** An independent cold-context subagent (no build knowledge — did not read someone.cu/MODULE/RUN_STATE) rebuilt from source, reproduced the golden `aa5b731d` **bit-for-bit**, and passed an 18-check conformance battery → **CONFORMANT** (`runs/someone_twopass_verify.md`). This is the fresh cold two-pass the prompt allows via a no-build-context subagent. someone is now fully verified.
+
+**OWED (honest):** the cold two-pass for **`ratchet`** only (same pattern; `ratchet.exe --golden` reproduces `91fce3c4`). someone is cleared.
 
 ## Next concrete action (for the next session)
-1. Fresh-session cold two-pass for `someone` and `ratchet` (contract + binary only) → drop the caveats. (`ratchet.exe --golden` reproduces `91fce3c4`; `someone.exe --golden` reproduces `aa5b731d`.)
+1. Cold two-pass for `ratchet` (independent no-build-context subagent, contract + binary only) → then ratchet is fully cleared too.
 2. Phase 3 next tools copying the template: `posit` (Python parsimony, D-005), `algebra` (cuSOLVER crossed-product), `mcts`, `autotune`.
 3. Optional: `ratchet` v1.1.0 (`--scan-rho` critical-point sweep, D-015) + O(1) binomial sampling for billions-scale; a full N=256 n≥20 confirmation of the S5 overturn (~2–3 h).
 
