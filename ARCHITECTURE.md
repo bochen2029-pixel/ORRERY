@@ -107,7 +107,7 @@ Seeded from Bo's existing engines (`C:\Users\user\Desktop\DSA\`, `C:\ASTRA-7`, `
 | **someone** | C++/CUDA | Evolutionary Someone-Criterion: encoder/bottleneck/decoder/predictor agents (C2 gap = `pureGap`), viability/stakes/death (C3), zombie-vs-normal ablation; sweep k → is the band an *evolved* optimum? | `dak_evolution_complex.cu` | **DONE v1.1.0** (golden `aa5b731d`, det. 3×, cold two-pass verified; the template) |
 | **ratchet** | C++/CUDA | Branching / phase transition; the (1−p)ρ=p critical point at billions of trials | `criticality_cuda.cu`, `toy_rr_frontier_ratchet.py` | planned |
 | **algebra** | C++/CUDA (cuSOLVER) | Crossed-product entropy-from-observer (F16); relative-entropy finiteness vs cutoff | `toy_ql_crossed_product.py` | planned |
-| **posit** | Python | Parsimony auditor (Q3); physics-layer vs overlay posit budget | `posit_counter.py` | port (Python-is-right) |
+| **posit** | Python | Parsimony auditor (Q3); physics-layer vs overlay posit budget | `posit_counter.py` | **DONE v1.0.0** (golden `7a22dd22`; the Python-is-right tool, D-005) |
 | **mcts** | C++/CUDA | Generic MCTS over a supplied action/parameter space; the search engine the science calls | new | planned |
 | **autotune** | C++/(Py glue) | Sweep any tool's params; find the band / basin-of-someone; pre-registered targets | new | planned |
 | **lens** | CUDA/OptiX | RT-core render of the physics geometry (3D, honestly scoped per ADR-007) | `RAYFORMER`, buddhabrot | backlog |

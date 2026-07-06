@@ -9,7 +9,7 @@ Each tool is a module: one directory, one `MODULE.md`, one contract (in `../cont
 | **someone** | C++/CUDA | **DONE v1.1.0** (golden `aa5b731d`; det. 3×; **cold two-pass verified** — independent, CONFORMANT) | `tools/someone/` |
 | ratchet | C++/CUDA | **DONE v1.0.0** (golden `91fce3c4`; det. 3×; MC↔analytic 0.06%; **cold two-pass verified** — caught+fixed a harness-wiring defect, now GREEN) | `tools/ratchet/` |
 | algebra | C++/CUDA (cuSOLVER) | planned | `tools/algebra/` |
-| posit | Python | port | `tools/posit/` |
+| posit | Python | **DONE v1.0.0** (golden `7a22dd22`; det. exact; the Python-is-right tool, D-005; cold two-pass owed) | `tools/posit/` |
 | mcts | C++/CUDA | planned | `tools/mcts/` |
 | autotune | C++/Py glue | planned | `tools/autotune/` |
 | lens | CUDA/OptiX | backlog (3D viz first; compute-spike parked) | `tools/lens/` |

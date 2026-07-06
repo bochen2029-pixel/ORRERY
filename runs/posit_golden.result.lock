@@ -1,0 +1,28 @@
+# result.lock — posit golden (the frozen behavioral anchor)
+
+tool:            posit
+version:         1.0.0
+result_kind:     golden (determinism anchor + Q3 parsimony instrument; the D-POSIT seed-cluster banked win)
+language:        Python (D-005 — exact symbolic accounting, no GPU/RNG)
+
+# --- source / toolchain ---
+source_blake2b:  0f27f7364fdb74836c52a3d27a35cd379a4e9d695053e6d4fea31acb89fc233a
+python:          3.13.2
+host:            Windows 11 (posit forces UTF-8 stdout)
+
+# --- invocation ---
+seed:            0  (inert — posit has no RNG)
+case:            embedded seed cluster {arrow_of_time, measurement_classicality, low_entropy_start}
+case_blake2b:    1d364dc5078494e81d6235f699f65744ae219f932dde8d9ffd5d922d86ab7c4b
+cli:             python posit.py --golden --json
+
+# --- declared output ---
+declared_blake2b: 7a22dd229a42ce46a6c102f0545f83022b975dc39d5f1794cd6019e6f5a20e44
+determinism:      byte-identical across 3 runs (exact accounting; no RNG/wall-clock)
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f (D-013)
+result:           patchwork.physics=4.0, unified.physics=3.2, delta_physics=+0.8, same_reach=true,
+                  unified.floating=[], parsimony="win", verdict=pass; overlay +1.0, total -0.2
+finding:          the Q3 parsimony criterion is met at the physics layer for the seed cluster
+                  (+0.8 reduction at equal reach), guards live (bridge cost == posit cost; no floating).
+run_marker:       ORRERY posit golden freeze; repo commit = the commit adding this lock
+notes:            Measures parsimony structure (bookkeeping), never truth of an account, never qualia. III-sealed.

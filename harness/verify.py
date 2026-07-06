@@ -86,7 +86,13 @@ def main():
     print(f"ORRERY verify — {len(tools)} tool(s) — {stamp}")
 
     for name, d, mod in tools:
-        exe = name + (".exe" if is_windows() else "")
+        # polyglot: a Python tool ships <name>.py (run via `python`); a CUDA/C++ tool ships <name>.exe.
+        py_tool = os.path.isfile(os.path.join(d, name + ".py"))
+        if py_tool:
+            artifact = name + ".py"; runner = f"python {name}.py"
+        else:
+            artifact = name + (".exe" if is_windows() else "")
+            runner = (".\\" if is_windows() else "./") + artifact
         r = {"tool": name, "build": "-", "selftest": "-", "golden": "-", "notes": []}
 
         if not args.no_build:
@@ -100,18 +106,17 @@ def main():
                 all_green = False; r["notes"].append(f"build: {tail}")
                 rows.append(r); print(f"  {name}: BUILD {r['build']} ({secs:.0f}s)"); continue
 
-        exe_path = os.path.join(d, exe)
-        if not os.path.isfile(exe_path):
-            r["build"] = r["build"] if r["build"] != "-" else "NO-EXE"
-            r["selftest"] = "NO-EXE"; all_green = False
-            rows.append(r); print(f"  {name}: no {exe}"); continue
+        if not os.path.isfile(os.path.join(d, artifact)):
+            r["build"] = r["build"] if r["build"] != "-" else "NO-ARTIFACT"
+            r["selftest"] = "NO-ARTIFACT"; all_green = False
+            rows.append(r); print(f"  {name}: no {artifact}"); continue
 
-        code, secs, tail = run(f".\\{exe} --selftest", d, SELFTEST_TIMEOUT)
+        code, secs, tail = run(f"{runner} --selftest", d, SELFTEST_TIMEOUT)
         r["selftest"] = "OK" if code == 0 else f"FAIL({code})"
         if secs > NFR_SELFTEST_S: r["notes"].append(f"selftest {secs:.0f}s > {NFR_SELFTEST_S}s NFR")
         if code != 0: all_green = False; r["notes"].append(f"selftest: {tail}")
 
-        code, secs, tail = run(f".\\{exe} --golden", d, GOLDEN_TIMEOUT)
+        code, secs, tail = run(f"{runner} --golden", d, GOLDEN_TIMEOUT)
         r["golden"] = "OK" if code == 0 else f"FAIL({code})"
         if secs > NFR_GOLDEN_S: r["notes"].append(f"golden {secs:.0f}s > {NFR_GOLDEN_S}s NFR (WARN)")
         if code != 0: all_green = False; r["notes"].append(f"golden: {tail}")

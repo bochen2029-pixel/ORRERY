@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/posit.schema.json",
+  "title": "posit --json output envelope",
+  "description": "Machine-checkable schema for the posit tool's --json output. Matches contracts/posit.contract.md v1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "definitions": {
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "physics", "overlay", "posits", "bridges", "imports", "derived", "covered", "missing", "floating"],
+      "properties": {
+        "total": { "type": "number", "minimum": 0.0 },
+        "physics": { "type": "number", "minimum": 0.0 },
+        "overlay": { "type": "number", "minimum": 0.0 },
+        "posits": { "type": "integer", "minimum": 0 },
+        "bridges": { "type": "integer", "minimum": 0 },
+        "imports": { "type": "integer", "minimum": 0 },
+        "derived": { "type": "integer", "minimum": 0 },
+        "covered": { "type": "integer", "minimum": 0 },
+        "missing": { "type": "array", "items": { "type": "string" } },
+        "floating": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "properties": {
+    "tool": { "const": "posit" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_name", "targets_n", "patchwork_items", "unified_items", "tie_band", "case_blake2b"],
+      "properties": {
+        "case_name": { "type": "string" },
+        "targets_n": { "type": "integer", "minimum": 0 },
+        "patchwork_items": { "type": "integer", "minimum": 0 },
+        "unified_items": { "type": "integer", "minimum": 0 },
+        "tie_band": { "type": "number", "minimum": 0.0 },
+        "case_blake2b": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targets_n", "patchwork", "unified", "delta_physics", "delta_overlay", "delta_total", "same_reach", "parsimony"],
+      "properties": {
+        "targets_n": { "type": "integer", "minimum": 0 },
+        "patchwork": { "$ref": "#/definitions/account" },
+        "unified": { "$ref": "#/definitions/account" },
+        "delta_physics": { "type": "number" },
+        "delta_overlay": { "type": "number" },
+        "delta_total": { "type": "number" },
+        "same_reach": { "type": "boolean" },
+        "parsimony": { "type": "string", "enum": ["win", "reject"] }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-NO-PARSIMONY", "G-FLOATING"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}
