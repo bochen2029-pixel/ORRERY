@@ -8,7 +8,7 @@
 someone.exe --pop 200 --k 64 --seed 7 --json
 ```
 
-**Status:** `v0.1.0` · founded 2026-07-05 · **early and actively in progress.** The spec, the tool contracts, the verification model, and the decision log are laid down; the first tool (`someone`) is mid-build. This is a working *foundation*, not a finished instrument — by design, the spec ships before the code.
+**Status:** `v0.1.0` · founded 2026-07-05 · **the buildable catalogue is complete.** Six tools — `someone`, `ratchet`, `posit`, `mcts`, `algebra`, `autotune` — are built, golden-frozen, and each independently **cold-two-pass verified**; the compile-as-verification harness is green across CUDA *and* Python. Only `lens` remains (a deliberately parked, pre-registered SPIKE). The spec still ships before the code — every tool went contract-first → golden → two-pass, and each result is reproducible from its `result.lock`.
 
 The instrument that serves the theory at **[finaltheoryofeverything.org](https://finaltheoryofeverything.org)** — *The Unfinished Mirror*.
 
@@ -66,13 +66,13 @@ Seeded from existing GPU/engineering engines (the `dak_evolution`, `criticality`
 
 | Tool | Lang | What it measures | Status |
 |---|---|---|---|
-| **someone** | C++/CUDA | Evolutionary Someone-Criterion: self-modeling agents (encoder → bottleneck → decoder → predictor, a `pureGap` = the gap between the world and the agent's model of it) vs gapless "zombies", under survival stakes — *does the gap earn its keep?* The template every later tool copies. | **first build — in progress** |
-| **ratchet** | C++/CUDA | Branching / phase transition; the critical `(1−p)ρ = p` point at billions of trials | planned |
-| **algebra** | C++/CUDA | Crossed-product entropy-from-an-observer; relative-entropy finiteness against a cutoff | planned |
-| **posit** | Python | Parsimony auditor — physics-layer vs overlay posit budget (the runnable Occam check) | planned (port) |
-| **mcts** | C++/CUDA | Generic Monte-Carlo Tree Search over a supplied action/parameter space | planned |
-| **autotune** | C++ | Sweep any tool's parameters; find the band / the basin | planned |
-| **lens** | CUDA/OptiX | RT-core render of the physics geometry (honestly scoped) | backlog |
+| **someone** | C++/CUDA | Evolutionary Someone-Criterion: self-modeling agents (encoder → bottleneck → decoder → predictor, a `pureGap` = the gap between the world and the agent's model of it) vs gapless "zombies", under survival stakes — *does the gap earn its keep?* The template every later tool copies. | **DONE** (v1.1.0, golden `aa5b731d`, cold two-pass ✓) |
+| **ratchet** | C++/CUDA | Branching / phase transition; the critical `(1−p)ρ = p` point at billions of trials | **DONE** (v1.0.0, golden `91fce3c4`, cold two-pass ✓) |
+| **algebra** | C++/CUDA (cuSOLVER) | Crossed-product entropy-from-an-observer; the receipted `c=1` block-entropy divergence vs cutoff (scoped) | **DONE** (v1.0.0, golden `1526918f`, cold two-pass ✓) |
+| **posit** | Python | Parsimony auditor — physics-layer vs overlay posit budget (the runnable Occam check) | **DONE** (v1.0.0, golden `7a22dd22`, cold two-pass ✓) |
+| **mcts** | C++/CUDA | Generic Monte-Carlo Tree Search over a supplied action/parameter space | **DONE** (v1.0.0, golden `6c596a53`, cold two-pass ✓) |
+| **autotune** | Python (glue) | Sweep any tool's parameters; find the band / the basin (drives the built tools) | **DONE** (v1.0.0, golden `c79002f2`, cold two-pass ✓) |
+| **lens** | CUDA/OptiX | RT-core render of the physics geometry (honestly scoped) | backlog (parked SPIKE) |
 
 **Parked spike (pre-registered kill):** *RT-cores as isomorphic compute* for the intrinsically low-dimensional physics (geodesics, light-cones) — the Carmack move that might win *here* where it lost at high-dimensional attention. Belief waits on an honest baseline plus measurement.
 
