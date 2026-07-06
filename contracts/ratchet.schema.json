@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/ratchet.schema.json",
+  "title": "ratchet --json output envelope",
+  "description": "Machine-checkable schema for the ratchet tool's --json output. Matches contracts/ratchet.contract.md v1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "ratchet" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p", "rho", "R", "trials", "tmax", "cap", "tol"],
+      "properties": {
+        "p": { "type": "number", "exclusiveMinimum": 0.0, "exclusiveMaximum": 1.0 },
+        "rho": { "type": "number", "exclusiveMinimum": 0.0, "exclusiveMaximum": 1.0 },
+        "R": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "trials": { "type": "integer", "minimum": 1000, "maximum": 4000000000 },
+        "tmax": { "type": "integer", "minimum": 10, "maximum": 100000 },
+        "cap": { "type": "integer", "minimum": 16, "maximum": 1048576 },
+        "tol": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p", "rho", "R", "trials", "q_star", "p_unwrite_mc", "p_unwrite_analytic",
+                   "rel_error", "regime", "rho_c", "escaped_frac", "mean_survival_steps"],
+      "properties": {
+        "p": { "type": "number" },
+        "rho": { "type": "number" },
+        "R": { "type": "integer" },
+        "trials": { "type": "integer" },
+        "q_star": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "p_unwrite_mc": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "p_unwrite_analytic": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "rel_error": { "type": "number", "minimum": 0.0 },
+        "regime": { "type": "string", "enum": ["supercritical", "critical", "subcritical"] },
+        "rho_c": { "type": "number" },
+        "escaped_frac": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "mean_survival_steps": { "type": "number" }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-THEORY-MISMATCH"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

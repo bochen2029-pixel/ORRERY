@@ -22,7 +22,9 @@ Status legend: NOT_STARTED · IN_PROGRESS · DONE · SUSPECT · DEFERRED
 - [NOT_STARTED] H1 · `harness/verify.py`: discover tools, build + selftest + golden each, dated report to runs/, exit 0 iff green.
 
 ## Phase 3 — the next tools (copy someone's shape)
-- [NOT_STARTED] `ratchet` (from criticality_cuda) — branching/phase-transition; reproduce (1−p)ρ=p at GPU scale; gate = critical-point match.
+- [IN_PROGRESS] `ratchet` (from criticality_cuda + toy_rr_frontier_ratchet) — branching-ratchet MC; reproduce (1−p)ρ=p at GPU scale; gate = MC-vs-analytic match (G-THEORY-MISMATCH).
+  - [DONE] R1 · Contract-first: `contracts/ratchet.contract.md` v1.0.0 + `ratchet.schema.json` + `tools/ratchet/MODULE.md` (D-015). Physics = Galton-Watson `q*=min(1,p/((1−p)ρ))`, P[unwrite]=q*^R.
+  - [NOT_STARTED] R2 · Implement `tools/ratchet/ratchet.cu` (one thread/trajectory, O(1) binomial steps, integer atomics ⇒ trivial determinism). R3 golden freeze. R4 two-pass.
 - [NOT_STARTED] `posit` (Python port of posit_counter) — parsimony auditor; contract + golden.
 - [NOT_STARTED] `algebra` (cuSOLVER) — crossed-product entropy-from-observer; the divergence-cancellation receipt (D-CP).
 - [NOT_STARTED] `mcts` — generic CUDA MCTS the science calls.
