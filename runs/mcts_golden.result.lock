@@ -1,0 +1,28 @@
+# result.lock — mcts golden (the frozen behavioral anchor)
+
+tool:            mcts
+version:         1.0.0
+result_kind:     golden (determinism anchor + UCT engine-correctness: finds a known optimum)
+
+# --- binary / toolchain ---
+binary_blake2b:  f46741ddd3d350c76ab77d0e9215b448e40a89ebd9beea044765fd197bb15abf
+gpu_arch:        sm_89
+gpu_device:      NVIDIA GeForce RTX 4070 Ti SUPER (16376 MiB, driver 610.47)
+cuda:            13.1 (V13.1.80)
+host_compiler:   MSVC 2022 (vcvars64)
+build_cmd:       nvcc -O3 -arch=sm_89 mcts.cu -o mcts.exe
+
+# --- invocation ---
+seed:            20260705
+params:          branching=4 depth=6 iters=2000 trees=1024 c_uct=1.414214 max_nodes=8192 landscape=match tol=0.001
+cli:             mcts.exe --branching 4 --depth 6 --iters 2000 --trees 1024 --c-uct 1.414214 --landscape match --seed 20260705 --json
+
+# --- declared output ---
+declared_blake2b: 6c596a53f44543f2149ebfe7bc33ac9ce19e5443f214255f24212559344d8000
+determinism:      byte-identical across 3 independent --golden runs on sm_89
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f (D-013)
+result:           best_reward=1.0, best_path=[2,2,2,3,2,1] (==derived target), found_optimum=true,
+                  frac_trees_optimal=1.0, mean_tree_nodes~1998.7; G-SUBOPTIMAL clear; verdict=pass
+finding:          root-parallel UCT finds the exact optimum of the 4^6 match landscape (all 1024 trees).
+run_marker:       ORRERY mcts golden freeze; repo commit = the commit adding this lock
+notes:            Measures a search engine's reach (an algorithm), never acquaintance. III-sealed.

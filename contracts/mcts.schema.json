@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/mcts.schema.json",
+  "title": "mcts --json output envelope",
+  "description": "Machine-checkable schema for the mcts tool's --json output. Matches contracts/mcts.contract.md v1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "mcts" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branching", "depth", "iters", "trees", "c_uct", "max_nodes", "landscape", "tol"],
+      "properties": {
+        "branching": { "type": "integer", "minimum": 2, "maximum": 32 },
+        "depth": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "iters": { "type": "integer", "minimum": 16, "maximum": 1000000 },
+        "trees": { "type": "integer", "minimum": 1, "maximum": 1048576 },
+        "c_uct": { "type": "number", "minimum": 0.0, "maximum": 4.0 },
+        "max_nodes": { "type": "integer", "minimum": 64, "maximum": 1048576 },
+        "landscape": { "type": "string", "enum": ["match"] },
+        "tol": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branching", "depth", "trees", "iters", "optimum", "best_reward", "gap_to_optimum",
+                   "found_optimum", "best_path", "mean_best_reward", "frac_trees_optimal", "mean_tree_nodes"],
+      "properties": {
+        "branching": { "type": "integer" },
+        "depth": { "type": "integer" },
+        "trees": { "type": "integer" },
+        "iters": { "type": "integer" },
+        "optimum": { "type": "number" },
+        "best_reward": { "type": "number" },
+        "gap_to_optimum": { "type": "number" },
+        "found_optimum": { "type": "boolean" },
+        "best_path": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+        "mean_best_reward": { "type": "number" },
+        "frac_trees_optimal": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "mean_tree_nodes": { "type": "number", "minimum": 0.0 }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-SUBOPTIMAL"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}
