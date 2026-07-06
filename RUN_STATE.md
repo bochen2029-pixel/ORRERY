@@ -9,7 +9,9 @@ someone.cu builds clean · `--selftest` green (blake2b KATs + confound-fix proof
 
 **Science result (S5, `runs/someone_round01_reproduce.md`):** de-confounded n=24 sweep — round-01's per-regime winners **[Z,N,Z,N] → [T,T,T,T]** (all statistical ties). Strong monotone form NOT SUPPORTED (reconfirmed corpus-grade); weak threat/deprivation form NOT significant; "zombie-wins-L0/L2" OVERTURNED. The gap is present everywhere but ≈ fitness-neutral (founder-effect seed variance dominates) — vindicates D-DAK-RNG. Science-handback block written for QUALIA_LAB to paste. **Structure only; §III-sealed.**
 
-**`ratchet` (tool #2) also BUILT this session (R1–R3 DONE).** GPU Monte-Carlo of the Galton-Watson branching ratchet; contract v1.0.0 + schema + MODULE + `ratchet.cu` + golden `91fce3c4` (3× byte-identical, ~0.5s). **MC↔analytic rel_error 0.06%** → the (1−p)ρ=p threshold (F13/T-RATE) reproduced in-silico. Determinism is structurally trivial (integer atomics, counter RNG). Copies someone's spine. D-015.
+**`ratchet` (tool #2) BUILT (R1–R3 DONE, cold two-pass DONE).** GPU Monte-Carlo of the Galton-Watson branching ratchet; contract v1.0.0 + schema + MODULE + `ratchet.cu` + golden `91fce3c4` (3× byte-identical, ~0.5s). **MC↔analytic rel_error 0.06%** → the (1−p)ρ=p threshold (F13/T-RATE) reproduced in-silico. Determinism structurally trivial (integer atomics, counter RNG). D-015.
+
+**`posit` (tool #3) BUILT — the first Python tool (D-005/D-016).** Parsimony auditor porting posit_counter.py; contract v1.0.0 + schema + MODULE + `posit.py` + golden `7a22dd22` (3× byte-identical; determinism is EXACT — no RNG). Reads audit cases (`--case`/`--stdin`); reports physics/overlay/total posit-budget deltas + same_reach + floating, gates G-NO-PARSIMONY / G-FLOATING (confabulation guard). Golden = seed cluster **delta_physics=+0.8, win** (the D-POSIT banked win). selftest green (12 checks). `harness/verify.py` made **polyglot** (runs `python <name>.py` for Python tools) → GREEN on posit. Cold two-pass in flight.
 
 **Phase 2 harness GREEN**: `harness/verify.py` ran GREEN from an independent cold-context subagent (someone build/selftest/golden all OK — `runs/verify_20260705_190525.md`); it auto-discovers ratchet too. So `someone`'s golden now has an **independent cold-context reproduction** (via verify.py), strengthening its verification beyond single-agent.
 
@@ -17,13 +19,12 @@ someone.cu builds clean · `--selftest` green (blake2b KATs + confound-fix proof
 
 **`ratchet` cold two-pass: DONE — and it EARNED its keep.** An independent no-build-context subagent found a real defect: ratchet's MODULE.md had the build command as an inline code span, so `harness/verify.py` couldn't extract it (harness RED) even though the tool's behavior was fully conformant (golden reproduced shipped + cold-rebuilt, MC↔analytic 0.0004, schema/exit-codes/determinism/firewall all pass). **Fixed** (fenced the build block; added a template note so no future tool repeats it); re-ran `verify.py --tool ratchet` → **GREEN**. `runs/ratchet_twopass_verify.md` (+ RESOLUTION).
 
-**NOTHING OWED.** Both tools are DONE, golden-frozen, and **independently cold-two-pass verified**. The instrument has two contract-stable, compounding tools + a green harness that catches real defects.
+**THREE tools built this session** (someone, ratchet, posit) — all golden-frozen + green through the polyglot harness. someone + ratchet are cold-two-pass verified; **posit's cold two-pass is in flight** (the only owed item). The instrument spans CUDA and Python, and the harness catches real defects (it caught ratchet's build-command wiring).
 
 ## Next concrete action (for the next session)
-1. Next tools, copying the template: `posit` (Python parsimony auditor, D-005), `algebra` (cuSOLVER crossed-product entropy, feeds F16), `mcts`, `autotune`. Each: contract-first → golden → cold two-pass.
-2. Optional deepenings: `ratchet` v1.1.0 (`--scan-rho` critical-point sweep + O(1) binomial for billions-scale, D-015); a full N=256 n≥20 confirmation of the S5 `someone` overturn (~2–3 h) for heavy-arm parity.
-2. Phase 3 next tools copying the template: `posit` (Python parsimony, D-005), `algebra` (cuSOLVER crossed-product), `mcts`, `autotune`.
-3. Optional: `ratchet` v1.1.0 (`--scan-rho` critical-point sweep, D-015) + O(1) binomial sampling for billions-scale; a full N=256 n≥20 confirmation of the S5 overturn (~2–3 h).
+1. Confirm posit's cold two-pass verdict (`runs/posit_twopass_verify.md`) → drop its caveat.
+2. Next tools, copying the template: `algebra` (cuSOLVER crossed-product entropy, feeds F16), `mcts` (generic CUDA MCTS), `autotune` (parameter sweep / basin finder). Each: contract-first → golden → cold two-pass.
+3. Optional deepenings: `posit` v1.1.0 (D-POSIT-AGG multi-cluster de-duplicated budget); `ratchet` v1.1.0 (`--scan-rho` + O(1) binomial for billions-scale, D-015); a full N=256 n≥20 confirmation of the S5 `someone` overturn (~2–3 h).
 
 ---
 
