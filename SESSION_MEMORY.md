@@ -55,7 +55,7 @@
 - **Canonical JSON hash domain (D-013):** `blake2b` over `{seed, params, result, gates, verdict}` only — floats `%.6f`, fixed key order; **exclude** `tool`/`version`/`notes` so a behavior-preserving rewrite keeps the golden. `--golden` recomputes + compares; also prints the full envelope to stdout (for `stdout.txt` capture) and the verdict to stderr.
 - **JSON envelope:** `{tool,version,seed,params,result,verdict,gates,notes}`. `verdict` = "pass"/"fail"; `gates` = array of `{id,fired,value,threshold}`.
 
-### The DECISIONS made this session (D-009..D-018) — the WHY
+### The DECISIONS made this session (D-009..D-019) — the WHY  [D-019 = autotune: Python glue, self-contained built-in golden + real-tool subprocessing; completes the buildable catalogue]
 - **D-009** someone contract v1.0.0→**v1.1.0**: added `win_rate`+`p_value` (one-sided sign test) — a per-level claim needs significance, not a point delta (the science's D-DAK-RNG bar). MINOR/additive; authored the missing `someone.schema.json` too.
 - **D-010** someone `--ensemble` default stays **1** (changing a default is behavior-breaking); use ≥20 in the real experiment, not by changing the default.
 - **D-011** someone complexity ladder is **cumulative** (L0 base · L1 +predators · L2 +moving-lights · L3 +night) so L2↔L3 is the clean night A/B the science relies on.
@@ -119,7 +119,9 @@
 
 ## ⟢ TAIL — the last few turns, verbatim (highest-fidelity recent context; replay most-recent-first if re-seeding)
 
-**[most recent] USER:** "thanks, pausing here for now is fine... and if you haven't already, can you write your memory to disk, that serves both as a memory dump, and a continuation prompt and a sort of 'everything we have done recollection' and whatever else all in one massive md ? you are getting close to 90% and all else being equal when you get a moment this also can double as your own re-hydration prompt whenver the harness forces you to compaction etc. thanks." *(Context shown at 82%. → this file is the response.)*
+**[most recent, 2026-07-06 @ ~89% ctx] USER:** asked to build `autotune` + clarify whether `lens` is "parked" (done vs carved-out). → I confirmed **lens = carved-out / deliberately deferred** (a parked SPIKE w/ a pre-registered kill, D-004; operator-gated, NOT done), then **built `autotune` end-to-end** (tool #6, Python glue D-019, golden `c79002f2`, real-tool mode drives ratchet to find ρ_c=0.258) and **cold-two-pass verified it CONFORMANT**. Then the user re-asked for this memory refresh at ~89% ctx. **STATE NOW: all 6 tools built + golden-frozen + cold-two-pass verified; NOTHING OWED; buildable catalogue COMPLETE; only lens remains (parked); Phase 4 publish is OPERATOR-GATED (no push without confirmation).** Decisions are now D-009..**D-019** (see DECISIONS.md; D-019 = autotune Python-glue + self-contained-golden-vs-real-tool-mode).
+
+**[earlier] USER (2026-07-05, first pause):** asked for this memory doc (memory dump + continuation + recollection + rehydration in one massive md). *(→ this file was created then, updated since.)*
 
 **[prior] ASSISTANT (milestone summary):** Presented "Five tools built and cold-two-pass verified — the catalogue is (nearly) complete." Table of all 5 tools + golden hashes + what each establishes. Noted: template propagated; two languages one contract; the cold two-pass earns its keep (caught ratchet defect, confirmed algebra scope); a real scientific result (someone overturn); firewall held everywhere. **Recommended pausing at this strong point; offered to build `autotune` (last non-backlog tool) if the user says the word.**
 
