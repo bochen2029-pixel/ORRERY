@@ -15,10 +15,13 @@ someone.cu builds clean · `--selftest` green (blake2b KATs + confound-fix proof
 
 **`someone` cold two-pass: DONE.** An independent cold-context subagent (no build knowledge — did not read someone.cu/MODULE/RUN_STATE) rebuilt from source, reproduced the golden `aa5b731d` **bit-for-bit**, and passed an 18-check conformance battery → **CONFORMANT** (`runs/someone_twopass_verify.md`). This is the fresh cold two-pass the prompt allows via a no-build-context subagent. someone is now fully verified.
 
-**OWED (honest):** the cold two-pass for **`ratchet`** only (same pattern; `ratchet.exe --golden` reproduces `91fce3c4`). someone is cleared.
+**`ratchet` cold two-pass: DONE — and it EARNED its keep.** An independent no-build-context subagent found a real defect: ratchet's MODULE.md had the build command as an inline code span, so `harness/verify.py` couldn't extract it (harness RED) even though the tool's behavior was fully conformant (golden reproduced shipped + cold-rebuilt, MC↔analytic 0.0004, schema/exit-codes/determinism/firewall all pass). **Fixed** (fenced the build block; added a template note so no future tool repeats it); re-ran `verify.py --tool ratchet` → **GREEN**. `runs/ratchet_twopass_verify.md` (+ RESOLUTION).
+
+**NOTHING OWED.** Both tools are DONE, golden-frozen, and **independently cold-two-pass verified**. The instrument has two contract-stable, compounding tools + a green harness that catches real defects.
 
 ## Next concrete action (for the next session)
-1. Cold two-pass for `ratchet` (independent no-build-context subagent, contract + binary only) → then ratchet is fully cleared too.
+1. Next tools, copying the template: `posit` (Python parsimony auditor, D-005), `algebra` (cuSOLVER crossed-product entropy, feeds F16), `mcts`, `autotune`. Each: contract-first → golden → cold two-pass.
+2. Optional deepenings: `ratchet` v1.1.0 (`--scan-rho` critical-point sweep + O(1) binomial for billions-scale, D-015); a full N=256 n≥20 confirmation of the S5 `someone` overturn (~2–3 h) for heavy-arm parity.
 2. Phase 3 next tools copying the template: `posit` (Python parsimony, D-005), `algebra` (cuSOLVER crossed-product), `mcts`, `autotune`.
 3. Optional: `ratchet` v1.1.0 (`--scan-rho` critical-point sweep, D-015) + O(1) binomial sampling for billions-scale; a full N=256 n≥20 confirmation of the S5 overturn (~2–3 h).
 

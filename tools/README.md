@@ -7,7 +7,7 @@ Each tool is a module: one directory, one `MODULE.md`, one contract (in `../cont
 | Tool | Lang | Status | Dir |
 |---|---|---|---|
 | **someone** | C++/CUDA | **DONE v1.1.0** (golden `aa5b731d`; det. 3×; **cold two-pass verified** — independent, CONFORMANT) | `tools/someone/` |
-| ratchet | C++/CUDA | **DONE v1.0.0** (golden `91fce3c4`; det. 3×; MC↔analytic 0.06%; cold two-pass owed) | `tools/ratchet/` |
+| ratchet | C++/CUDA | **DONE v1.0.0** (golden `91fce3c4`; det. 3×; MC↔analytic 0.06%; **cold two-pass verified** — caught+fixed a harness-wiring defect, now GREEN) | `tools/ratchet/` |
 | algebra | C++/CUDA (cuSOLVER) | planned | `tools/algebra/` |
 | posit | Python | port | `tools/posit/` |
 | mcts | C++/CUDA | planned | `tools/mcts/` |
@@ -25,7 +25,7 @@ CUDA/C++ for compute/scale; Python only for symbolic/accounting/glue, justificat
 ## Scope guard (structure not qualia; what a passing run does and does NOT show)
 ## Contract: ../../contracts/<tool>.contract.md  (vX.Y.Z)
 ## Internal design (kernels, data layout, the reduction-determinism approach)
-## Build command (exact; see ../../BUILD.md)
+## Build command (exact; see ../../BUILD.md) — MUST be a fenced ``` code block (not an inline span) with the full command; `harness/verify.py` discovers it by extracting the first fenced block after "## Build". An inline span → `NO-BUILD-CMD` → harness RED (the ratchet cold two-pass caught exactly this).
 ## Selftest: what --selftest checks
 ## Golden: params + where recorded
 ## Known issues / caveats

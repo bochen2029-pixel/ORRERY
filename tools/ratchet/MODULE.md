@@ -37,8 +37,11 @@ Trivial vs `someone`: every random value is a pure function of (seed, trajectory
 `ratchet.exe --p 0.2 --rho 0.5 --R 3 --trials 4000000 --tmax 500 --cap 256 --seed 20260705 --json` → analytic P[unwrite]=0.125; MC = 0.125075 (rel_error 0.06%). Fast (~0.5 s — no `someone`-style bandwidth wall; trajectory state is a single integer). Frozen `91fce3c4` in `goldens/ratchet/` (`declared.hash` + `stdout.txt` + `NOTE.md`); `result.lock` in `runs/ratchet_golden.result.lock`.
 
 ## Build
-Single-file CUDA, from `tools/ratchet/` (see `BUILD.md`):
-`cmd /c '"...\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 ratchet.cu -o ratchet.exe'`
+Single-file CUDA, from `tools/ratchet/` (see `BUILD.md`). The command lives in a fenced block so `harness/verify.py`'s `extract_build_cmd` can discover it (an inline code span is NOT picked up — the defect the cold two-pass caught):
+```
+cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 ratchet.cu -o ratchet.exe'
+```
+Then: `.\ratchet.exe --selftest` · `.\ratchet.exe --golden` · `.\ratchet.exe <params> --json`.
 
 ## Known issues / caveats
 - The model assumes **independent fragments** (per the toy's carried caveat); confounded redundancy would degrade the effective exponent — a v-next modeling extension, not a v1.0.0 concern.
