@@ -11,7 +11,7 @@ Each tool is a module: one directory, one `MODULE.md`, one contract (in `../cont
 | algebra | C++/CUDA (cuSOLVER) | **DONE v1.0.0** (golden `1526918f`; det. 3×; c=1 validated vs receipt; Part-A scoped; **cold two-pass verified** — CONFORMANT, scope confirmed) | `tools/algebra/` |
 | posit | Python | **DONE v1.0.0** (golden `7a22dd22`; det. exact; the Python-is-right tool, D-005; **cold two-pass verified** — CONFORMANT) | `tools/posit/` |
 | mcts | C++/CUDA | **DONE v1.0.0** (golden `6c596a53`; det. 3×; root-parallel UCT; **cold two-pass verified** — CONFORMANT) | `tools/mcts/` |
-| autotune | Python (glue) | **DONE v1.0.0** (golden `c79002f2`; det. exact; drives the built tools — found ratchet's ρ_c; cold two-pass owed) | `tools/autotune/` |
+| autotune | Python (glue) | **DONE v1.0.0** (golden `c79002f2`; det. exact; drives the built tools — found ratchet's ρ_c; **cold two-pass verified** — CONFORMANT) | `tools/autotune/` |
 | lens | CUDA/OptiX | backlog (3D viz first; compute-spike parked) | `tools/lens/` |
 
 ## Language rule (ARCHITECTURE §7, DECISIONS D-005)
