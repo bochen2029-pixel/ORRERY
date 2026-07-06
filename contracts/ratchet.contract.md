@@ -13,7 +13,7 @@ Monte-Carlo the recoverability-frontier **branching ratchet** at GPU scale and v
 | --R | int | 1–4096 | 3 | number of independent fragments the record is held in (redundancy) |
 | --trials | int | 1000–4000000000 | 1000000 | Monte-Carlo trajectories (the scale) |
 | --tmax | int | 10–100000 | 1000 | max rewrite steps before a surviving trajectory is declared persistent |
-| --cap | int | 16–1048576 | 4096 | offspring cap; a trajectory reaching it is a supercritical escape (record persists) |
+| --cap | int | 16–65536 | 256 | offspring cap; a trajectory reaching it is a supercritical escape (record persists). 256 suffices (q\*^256≈0 above threshold; matches the toy) and keeps exact per-fragment sampling fast |
 | --tol | float | 0.0–1.0 | 0.02 | relative-error tolerance for the theory-match gate |
 | --seed | int | ≥0 | (required) | base RNG seed |
 | --json | flag | | off | emit JSON envelope on stdout |
@@ -53,8 +53,8 @@ Exit `0` when the MC reproduces the analytic law within `--tol` (the (1−p)ρ=p
 Declared output is a deterministic function of (all params, seed). Per-trajectory RNG is counter-based, keyed by (seed, trajectory_id, step, fragment_index) — **no per-thread RNG state, no wall-clock**. The extinction tally is an **integer** count (`atomicAdd` on int is associative ⇒ order-independent ⇒ deterministic); `p_unwrite_mc` = integer/integer. **No float atomics anywhere.** Pin the launch config. The survival-time histogram uses integer atomics per bin. Byte-identical declared output on sm_89.
 
 ## Golden
-params: `ratchet.exe --p 0.2 --rho 0.5 --R 3 --trials 4000000 --tmax 500 --cap 4096 --seed 20260705 --json`
-(At p=0.2, ρ=0.5: q\*=0.5, analytic P[unwrite]=0.5³=0.125, supercritical since (1−p)ρ=0.4>0.2. 4M trajectories ⇒ ~0.1% sampling error, well inside tol=0.02. Fast: <1 min.)
+params: `ratchet.exe --p 0.2 --rho 0.5 --R 3 --trials 4000000 --tmax 500 --cap 256 --seed 20260705 --json`
+(At p=0.2, ρ=0.5: q\*=0.5, analytic P[unwrite]=0.5³=0.125, supercritical since (1−p)ρ=0.4>0.2. 4M trajectories ⇒ ~0.1% sampling error, well inside tol=0.02. Fast: a few seconds — trajectory state is a single integer; escapes stop at cap=256.)
 recorded: `goldens/ratchet/` (canonical-serialized declared JSON + blake2b hash + captured stdout). Hash domain = {seed, params, result, gates, verdict} (as `someone`, D-013).
 
 ## Change log

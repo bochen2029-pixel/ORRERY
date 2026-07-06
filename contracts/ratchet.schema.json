@@ -20,7 +20,7 @@
         "R": { "type": "integer", "minimum": 1, "maximum": 4096 },
         "trials": { "type": "integer", "minimum": 1000, "maximum": 4000000000 },
         "tmax": { "type": "integer", "minimum": 10, "maximum": 100000 },
-        "cap": { "type": "integer", "minimum": 16, "maximum": 1048576 },
+        "cap": { "type": "integer", "minimum": 16, "maximum": 65536 },
         "tol": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
       }
     },

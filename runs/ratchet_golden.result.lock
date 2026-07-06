@@ -1,0 +1,29 @@
+# result.lock — ratchet golden (the frozen behavioral anchor)
+
+tool:            ratchet
+version:         1.0.0
+result_kind:     golden (determinism anchor + F13 (1-p)rho=p in-silico check)
+
+# --- binary / toolchain ---
+binary_blake2b:  5cea818fc9ea67f1e65db43a134fc9247f96e633e51944737c4b356735dba9ce
+gpu_arch:        sm_89
+gpu_device:      NVIDIA GeForce RTX 4070 Ti SUPER (16376 MiB, driver 610.47)
+cuda:            13.1 (V13.1.80)
+host_compiler:   MSVC 2022 (vcvars64)
+build_cmd:       nvcc -O3 -arch=sm_89 ratchet.cu -o ratchet.exe
+
+# --- invocation ---
+seed:            20260705
+params:          p=0.2 rho=0.5 R=3 trials=4000000 tmax=500 cap=256 tol=0.02
+cli:             ratchet.exe --p 0.2 --rho 0.5 --R 3 --trials 4000000 --tmax 500 --cap 256 --seed 20260705 --json
+
+# --- declared output ---
+declared_blake2b: 91fce3c40ea63051f305b072556ecf39980db52cbabd4f8f89f6520625e38105
+determinism:      byte-identical across 3 independent --golden runs (~0.5s each) on sm_89
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f (D-013)
+result:           p_unwrite_mc=0.125075 vs analytic q*^R=0.125000, rel_error=0.000596 (0.06%);
+                  regime=supercritical; escaped_frac=0.874926; G-THEORY-MISMATCH clear; verdict=pass
+finding:          the GPU MC reproduces the Galton-Watson branching law (which contains the
+                  (1-p)rho=p threshold, F13/T-RATE) to <0.1% at 4M trajectories.
+run_marker:       ORRERY ratchet golden freeze; repo commit = the commit adding this lock
+notes:            Sims prove structure (a branching threshold), never acquaintance. III-sealed.
