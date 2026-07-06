@@ -19,12 +19,11 @@ someone.cu builds clean · `--selftest` green (blake2b KATs + confound-fix proof
 
 **`ratchet` cold two-pass: DONE — and it EARNED its keep.** An independent no-build-context subagent found a real defect: ratchet's MODULE.md had the build command as an inline code span, so `harness/verify.py` couldn't extract it (harness RED) even though the tool's behavior was fully conformant (golden reproduced shipped + cold-rebuilt, MC↔analytic 0.0004, schema/exit-codes/determinism/firewall all pass). **Fixed** (fenced the build block; added a template note so no future tool repeats it); re-ran `verify.py --tool ratchet` → **GREEN**. `runs/ratchet_twopass_verify.md` (+ RESOLUTION).
 
-**THREE tools built this session** (someone, ratchet, posit) — all golden-frozen + green through the polyglot harness. someone + ratchet are cold-two-pass verified; **posit's cold two-pass is in flight** (the only owed item). The instrument spans CUDA and Python, and the harness catches real defects (it caught ratchet's build-command wiring).
+**THREE tools built this session** (someone, ratchet, posit) — all golden-frozen, green through the polyglot harness, and **independently cold-two-pass verified (all CONFORMANT)**. **NOTHING OWED.** The instrument spans CUDA and Python, three throats (the gap, the ratchet threshold `(1−p)ρ=p`, the parsimony criterion Q3), and the harness demonstrably catches real defects (it caught ratchet's build-command wiring). Verdicts: `runs/{someone,ratchet,posit}_twopass_verify.md`.
 
 ## Next concrete action (for the next session)
-1. Confirm posit's cold two-pass verdict (`runs/posit_twopass_verify.md`) → drop its caveat.
-2. Next tools, copying the template: `algebra` (cuSOLVER crossed-product entropy, feeds F16), `mcts` (generic CUDA MCTS), `autotune` (parameter sweep / basin finder). Each: contract-first → golden → cold two-pass.
-3. Optional deepenings: `posit` v1.1.0 (D-POSIT-AGG multi-cluster de-duplicated budget); `ratchet` v1.1.0 (`--scan-rho` + O(1) binomial for billions-scale, D-015); a full N=256 n≥20 confirmation of the S5 `someone` overturn (~2–3 h).
+1. Next tools, copying the template: `algebra` (cuSOLVER crossed-product entropy, feeds F16/D-CP), `mcts` (generic CUDA MCTS the science calls), `autotune` (parameter sweep / basin finder). Each: contract-first → golden → cold two-pass.
+2. Optional deepenings: `posit` v1.1.0 (D-POSIT-AGG multi-cluster de-duplicated budget); `ratchet` v1.1.0 (`--scan-rho` + O(1) binomial for billions-scale, D-015); a full N=256 n≥20 confirmation of the S5 `someone` overturn (~2–3 h).
 
 ---
 
