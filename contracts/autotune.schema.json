@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/autotune.schema.json",
+  "title": "autotune --json output envelope",
+  "description": "Machine-checkable schema for the autotune tool's --json output. Matches contracts/autotune.contract.md v1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "autotune" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objective", "obj_center", "obj_width", "tool", "sweep", "metric", "fixed",
+                   "lo", "hi", "points", "locate", "level", "target", "tol"],
+      "properties": {
+        "objective": { "type": "string" },
+        "obj_center": { "type": "number" },
+        "obj_width": { "type": "number" },
+        "tool": { "type": "string" },
+        "sweep": { "type": "string" },
+        "metric": { "type": "string" },
+        "fixed": { "type": "string" },
+        "lo": { "type": "number" },
+        "hi": { "type": "number" },
+        "points": { "type": "integer", "minimum": 3, "maximum": 4096 },
+        "locate": { "type": "string", "enum": ["argmax", "crossing"] },
+        "level": { "type": "number" },
+        "target": { "type": "number" },
+        "tol": { "type": "number", "minimum": 0.0 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objective", "locate", "points", "lo", "hi", "x_located", "f_at_located",
+                   "target", "located_error", "on_target", "f_min", "f_max"],
+      "properties": {
+        "objective": { "type": "string" },
+        "locate": { "type": "string", "enum": ["argmax", "crossing"] },
+        "points": { "type": "integer" },
+        "lo": { "type": "number" },
+        "hi": { "type": "number" },
+        "x_located": { "type": "number" },
+        "f_at_located": { "type": "number" },
+        "target": { "type": "number" },
+        "located_error": { "type": "number", "minimum": 0.0 },
+        "on_target": { "type": "boolean" },
+        "f_min": { "type": "number" },
+        "f_max": { "type": "number" }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-OFF-TARGET"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

@@ -109,7 +109,7 @@ Seeded from Bo's existing engines (`C:\Users\user\Desktop\DSA\`, `C:\ASTRA-7`, `
 | **algebra** | C++/CUDA (cuSOLVER) | Crossed-product entropy-from-observer (F16); the receipted c=1 divergence (Part A) vs cutoff | `toy_cp_divergence.py` | **DONE v1.0.0** (golden `1526918f`, cold two-pass verified; Part-A scoped, D-018) |
 | **posit** | Python | Parsimony auditor (Q3); physics-layer vs overlay posit budget | `posit_counter.py` | **DONE v1.0.0** (golden `7a22dd22`, cold two-pass verified; the Python-is-right tool, D-005) |
 | **mcts** | C++/CUDA | Generic MCTS over a supplied action/parameter space; the search engine the science calls | new | **DONE v1.0.0** (golden `6c596a53`, cold two-pass verified; root-parallel UCT) |
-| **autotune** | C++/(Py glue) | Sweep any tool's params; find the band / basin-of-someone; pre-registered targets | new | planned |
+| **autotune** | Python (glue) | Sweep any tool's params; find the band / basin-of-someone; pre-registered targets | new | **DONE v1.0.0** (golden `c79002f2`; drives the built tools, D-019) |
 | **lens** | CUDA/OptiX | RT-core render of the physics geometry (3D, honestly scoped per ADR-007) | `RAYFORMER`, buddhabrot | backlog |
 
 **Parked SPIKE (pre-registered kill):** *RT-cores as isomorphic compute* for the intrinsically-low-D physics (geodesics, light-cones) — the Carmack move that might win *here* where it lost at high-D attention. Build an honest baseline, measure, retire if it doesn't beat it (RAYFORMER ADR-007 protocol). Not a first build.

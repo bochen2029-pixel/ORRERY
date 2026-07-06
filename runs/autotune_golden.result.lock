@@ -1,0 +1,27 @@
+# result.lock — autotune golden (the frozen behavioral anchor)
+
+tool:            autotune
+version:         1.0.0
+result_kind:     golden (determinism anchor + locator correctness: recovers a known peak)
+language:        Python (D-019 — orchestration glue, no GPU/RNG)
+
+# --- source / toolchain ---
+source_blake2b:  265c3d0f566eb949611bfcce8f017dc58739e74afdae2e8dc1eaf18a031ebf57
+python:          3.13.2
+host:            Windows 11 (forces UTF-8 stdout)
+
+# --- invocation ---
+seed:            0  (inert -- no RNG)
+params:          objective=peak obj_center=0.37 obj_width=0.12 lo=0 hi=1 points=41 locate=argmax target=0.37 tol=0.02
+cli:             python autotune.py --objective peak --obj-center 0.37 --obj-width 0.12 --lo 0 --hi 1 --points 41 --locate argmax --target 0.37 --tol 0.02 --seed 0 --json
+
+# --- declared output ---
+declared_blake2b: c79002f23cf236baab5ecdb5753603a7a3853199f750b0139771d4e6cdd55bbe
+determinism:      byte-identical across 3 runs (no RNG/wall-clock; fixed grid; exact objective)
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f (D-013)
+result:           x_located=0.370091 (parabolic-refined), located_error=0.000091, on_target=true,
+                  f_max=0.998265; G-OFF-TARGET clear; verdict=pass
+compounding_demo: autotune drives ratchet across rho, locates (1-p)rho=p at 0.2581 vs analytic 0.25
+                  (real-tool mode; not part of this self-contained golden)
+run_marker:       ORRERY autotune golden freeze; repo commit = the commit adding this lock
+notes:            Locates a feature of a swept curve (an orchestration mechanism), never acquaintance. III-sealed.
