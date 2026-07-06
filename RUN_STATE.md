@@ -9,11 +9,16 @@ someone.cu builds clean · `--selftest` green (blake2b KATs + confound-fix proof
 
 **Science result (S5, `runs/someone_round01_reproduce.md`):** de-confounded n=24 sweep — round-01's per-regime winners **[Z,N,Z,N] → [T,T,T,T]** (all statistical ties). Strong monotone form NOT SUPPORTED (reconfirmed corpus-grade); weak threat/deprivation form NOT significant; "zombie-wins-L0/L2" OVERTURNED. The gap is present everywhere but ≈ fitness-neutral (founder-effect seed variance dominates) — vindicates D-DAK-RNG. Science-handback block written for QUALIA_LAB to paste. **Structure only; §III-sealed.**
 
-**OWED (honest):** a genuine **fresh-SESSION cold two-pass** (this session's verification is thorough but single-agent; an independent cold-subagent pass stalled on async handoff). Mark `someone` results **single-agent-verified, cold-two-pass-pending** until then.
+**`ratchet` (tool #2) also BUILT this session (R1–R3 DONE).** GPU Monte-Carlo of the Galton-Watson branching ratchet; contract v1.0.0 + schema + MODULE + `ratchet.cu` + golden `91fce3c4` (3× byte-identical, ~0.5s). **MC↔analytic rel_error 0.06%** → the (1−p)ρ=p threshold (F13/T-RATE) reproduced in-silico. Determinism is structurally trivial (integer atomics, counter RNG). Copies someone's spine. D-015.
+
+**Phase 2 harness GREEN**: `harness/verify.py` ran GREEN from an independent cold-context subagent (someone build/selftest/golden all OK — `runs/verify_20260705_190525.md`); it auto-discovers ratchet too. So `someone`'s golden now has an **independent cold-context reproduction** (via verify.py), strengthening its verification beyond single-agent.
+
+**OWED (honest):** a fresh-SESSION cold two-pass for BOTH tools (someone: has a cold golden-reproduction via verify.py + a single-agent conformance battery, but a full independent conformance pass is still nice-to-have; ratchet: owed). Mark both **cold-two-pass-pending** for full citation-grade trust.
 
 ## Next concrete action (for the next session)
-1. Run the fresh-session cold two-pass on `someone` (contract + binary only; re-run `--golden`, re-check conformance) → then drop the "cold-two-pass-pending" caveat.
-2. Then Phase 2 (harness/verify.py is written — run it green) and Phase 3 (next tool: `ratchet`, copying someone's shape). Optionally: a full N=256 n≥20 confirmation of the S5 overturn for heavy-arm parity (~2–3 h).
+1. Fresh-session cold two-pass for `someone` and `ratchet` (contract + binary only) → drop the caveats. (`ratchet.exe --golden` reproduces `91fce3c4`; `someone.exe --golden` reproduces `aa5b731d`.)
+2. Phase 3 next tools copying the template: `posit` (Python parsimony, D-005), `algebra` (cuSOLVER crossed-product), `mcts`, `autotune`.
+3. Optional: `ratchet` v1.1.0 (`--scan-rho` critical-point sweep, D-015) + O(1) binomial sampling for billions-scale; a full N=256 n≥20 confirmation of the S5 overturn (~2–3 h).
 
 ---
 

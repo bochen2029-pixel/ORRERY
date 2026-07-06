@@ -19,7 +19,7 @@ Status legend: NOT_STARTED · IN_PROGRESS · DONE · SUSPECT · DEFERRED
 - [DONE*] S6 · Verification (`runs/someone_twopass_verify.md`): golden reproduced **4× byte-identical**; full conformance battery (exit codes, schema, defaults, firewall, determinism) ALL PASS → **CONFORMANT to v1.1.0**. *Single-agent verified (an independent cold-subagent pass stalled on async handoff); a genuine **fresh-session cold two-pass is OWED** before load-bearing science citation. ARCHITECTURE §8 + tools/README updated to DONE.
 
 ## Phase 2 — the harness
-- [NOT_STARTED] H1 · `harness/verify.py`: discover tools, build + selftest + golden each, dated report to runs/, exit 0 iff green.
+- [DONE] H1 · `harness/verify.py`: discovers tools from MODULE.md, build+selftest+golden each, dated report, exit 0 iff green. **Ran GREEN** (someone: build/selftest/golden OK — `runs/verify_20260705_190525.md`), independently, from a cold-context subagent. Auto-discovers ratchet too.
 
 ## Phase 3 — the next tools (copy someone's shape)
 - [DONE*] `ratchet` (from criticality_cuda + toy_rr_frontier_ratchet) — branching-ratchet MC; reproduce (1−p)ρ=p at GPU scale.
