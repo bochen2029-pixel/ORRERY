@@ -1,0 +1,31 @@
+# result.lock — algebra golden (the frozen behavioral anchor)
+
+tool:            algebra
+version:         1.0.0
+result_kind:     golden (determinism anchor + the receipted c=1 divergence, checked vs Calabrese-Cardy)
+
+# --- binary / toolchain ---
+binary_blake2b:  5f9a04dbda5528db38caf47cbb0fc642b4911b1ca1b8298e5508d47618a3b0b9
+gpu_arch:        sm_89
+gpu_device:      NVIDIA GeForce RTX 4070 Ti SUPER (16376 MiB, driver 610.47)
+cuda:            13.1 (V13.1.80)
+host_compiler:   MSVC 2022 (vcvars64)
+build_cmd:       nvcc -O3 -arch=sm_89 algebra.cu -o algebra.exe -lcusolver
+libs:            cuSOLVER (double: Dsyevd, Dpotrf)
+
+# --- invocation ---
+seed:            0  (inert -- no RNG)
+params:          regime=critical mass2=1e-8 max_size=1024 num_sizes=5 fit_points=4 tol=0.15
+cli:             algebra.exe --regime critical --max-size 1024 --num-sizes 5 --fit-points 4 --seed 0 --json
+
+# --- declared output ---
+declared_blake2b: 1526918f15ec1f26baee73dcfad539e8943b3d57363f7559ce953857e7e9a89e
+determinism:      byte-identical across 3 independent --golden runs on sm_89 (cuSOLVER deterministic)
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f (D-013)
+result:           c_measured=0.996303 (analytic c=1), slope_nats=0.166051, growth_nats=0.459476,
+                  divergent=true, s_at_max_bits=1.515077; G-WRONG-C clear; verdict=pass
+ground_truth:     validated vs QUALIA_LAB receipt toy_cp_divergence.py Part A -- S(64)=0.85219,
+                  S(128)=1.01696 bits, slope 0.16610, s_at_max 1.51508 (all reproduced)
+scope:            Part A only (the c=1 divergence). The withdrawn Part-B value is NOT computed (D-CP).
+run_marker:       ORRERY algebra golden freeze; repo commit = the commit adding this lock
+notes:            Measures an entropy law (structure), never acquaintance. Finite-dim=Type I. III-sealed.
