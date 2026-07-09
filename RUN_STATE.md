@@ -16,8 +16,11 @@
 ## Migrations: ALL FOUR GREEN (2026-07-09, one commit each)
 **ratchet v1.0.1** golden `91fce3c4` ✓ bit-identical 3× · **mcts v1.0.1** `6c596a53` ✓ 3× · **algebra v1.0.1** `1526918f` ✓ 3× · **someone v1.1.1** `aa5b731d` ✓ (~8-min full-precision run, byte-for-byte). Zero mismatches — no SUSPECT, no re-baseline. Harness `verify.py --tool` GREEN for ratchet/mcts/algebra; posit/autotune untouched and re-confirmed golden-green. **D-020's acceptance criterion ("the code is ephemeral", in vivo) is fully met.** Net: each tool lost its ~80–220 lines of duplicated core; the doctrine now lives in one KAT-pinned place.
 
+## `mcp` v1.0.0 BUILT + VERIFIED (tool #7, D-022 adopted Active) — the instrument is LLM-callable
+Contract v1.0.0 + schema + MODULE + `mcp.py` (stdio JSON-RPC 2.0; six tools: list_tools, describe_contract-verbatim, run_tool, get_run, sweep→autotune, golden_status). **I-12 live:** every run response embeds the D-013 declared blake2b (textual extraction from the fixed-order envelope) + artifact blake2b. Golden `174ec02d` (3× byte-identical; the canned-posit chain — deliberate narrow coupling, re-baseline protocol in goldens/mcp/NOTE.md). Selftest 13/13. Polyglot harness GREEN. Live smoke drove a real ratchet GPU run through --serve. Pre-commit smoke caught + fixed a real defect (param keys rejected the catalogue's uppercase --R/--N). **Cold two-pass: CONFORMANT 10/10, no defects** (`runs/mcp_twopass_verify.md`).
+
 ## Next concrete action
-Phase 5 remainder (next session): **`mcp` v1.0.0 full build loop** — adopt D-022 into DECISIONS.md in that same commit; contract-first (`contracts/mcp.contract.md` + schema), Python (D-005-justified IPC glue), golden = a canned `posit` run; then `orreryd` v0 (queue + budgets + status page), then the `/lab` registry page (**publish itself stays OPERATOR-GATED** — no `git push`/public repo without explicit confirmation). Wave 1 (`hsmi-stab` first) opens only after Phase 5 closes; adopt D-026's pre-contract per tool as each opens.
+Phase 5 remainder (next session): **`orreryd` v0** (queue + budgets + status page — under the already-Active D-022), then the `/lab` registry page (**publish itself stays OPERATOR-GATED** — no `git push`/public repo without explicit confirmation). Also candidate: `someone`'s owed fp64 CPU oracle (I-11/D-025). Wave 1 (`hsmi-stab` first, D-026 pre-contract adopted at open) starts after Phase 5 closes.
 
 ## Guards (never violate)
 - Contracts and goldens are FROZEN; migrations are [BEHAVIOR-NEUTRAL] by definition or they are rejected.
