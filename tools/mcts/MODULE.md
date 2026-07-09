@@ -1,5 +1,8 @@
 # MODULE — `mcts`
 
+
+**v1.0.1 (2026-07-09): migrated to `lib/` (liborrery, D-020) — [BEHAVIOR-NEUTRAL], golden `6c596a53` reproduced bit-identical 3× post-migration; envelope/RNG/CLI spine now `lib/envelope.h` + `lib/rng.cuh` (KAT-pinned).**
+
 *The fourth ORRERY tool — a generic search engine, copying `someone`'s envelope/determinism/golden/two-pass shape. Read `contracts/mcts.contract.md` (v1.0.0) first — the contract is authoritative.*
 
 **Status: DONE v1.0.0** — built, golden frozen (`6c596a53`, 3× byte-identical, ~fast), selftest green (7 checks). All 1024 golden trees find the exact optimum.
@@ -35,7 +38,7 @@ blake2b KAT; optimum found on a small instance (best_reward=1.0); best_path leng
 ## Build
 Single-file CUDA, from `tools/mcts/` (see `BUILD.md`). Fenced so `harness/verify.py` can extract it:
 ```
-cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 mcts.cu -o mcts.exe'
+cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 mcts.cu ../../lib/envelope.cpp -o mcts.exe'
 ```
 Then: `.\mcts.exe --selftest` · `.\mcts.exe --golden` · `.\mcts.exe <params> --json`.
 

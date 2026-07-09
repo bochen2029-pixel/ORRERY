@@ -65,4 +65,5 @@ params: `mcts.exe --branching 4 --depth 6 --iters 2000 --trees 1024 --c-uct 1.41
 recorded: `goldens/mcts/` (declared hash + stdout + NOTE). Hash domain = {seed, params, result, gates, verdict}, floats `%.6f` (D-013).
 
 ## Change log
+- v1.0.1 — [BEHAVIOR-NEUTRAL, D-020] internal: envelope/RNG/CLI spine migrated to `lib/` (liborrery); no flag, field, gate, or exit-code change; golden `6c596a53` reproduced bit-identical 3× post-migration (PATCH per semver rules).
 - v1.0.0 — initial contract. Root-parallel UCT over a `B^D` space with a built-in `match` landscape (known optimum), root-parallel `P` trees, per-tree bounded node pool. Copies `someone`'s envelope/determinism/golden discipline. Planned MINOR (v1.1.0): additional landscapes (deceptive `needle`), a caller-supplied reward (via a spec), and root-action aggregation stats.
