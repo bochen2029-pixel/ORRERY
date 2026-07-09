@@ -13,10 +13,11 @@
 
 **CMake preset (D-021) VERIFIED:** `cmake --preset windows-sm89-fat` + build green (CMake 4.3.3 + VS Ninja under vcvars64); cuobjdump shows sm_89+sm_90+sm_120 SASS + sm_120 PTX; CMake-built selftest passes. Bare-nvcc stays the golden path; `build/` gitignored.
 
+## Migrations: ALL FOUR GREEN (2026-07-09, one commit each)
+**ratchet v1.0.1** golden `91fce3c4` ✓ bit-identical 3× · **mcts v1.0.1** `6c596a53` ✓ 3× · **algebra v1.0.1** `1526918f` ✓ 3× · **someone v1.1.1** `aa5b731d` ✓ (~8-min full-precision run, byte-for-byte). Zero mismatches — no SUSPECT, no re-baseline. Harness `verify.py --tool` GREEN for ratchet/mcts/algebra; posit/autotune untouched and re-confirmed golden-green. **D-020's acceptance criterion ("the code is ephemeral", in vivo) is fully met.** Net: each tool lost its ~80–220 lines of duplicated core; the doctrine now lives in one KAT-pinned place.
+
 ## Next concrete action
-**Migrate the four CUDA tools to lib, ONE COMMIT EACH, in order: ratchet (91fce3c4) → mcts (6c596a53) → algebra (1526918f) → someone (aa5b731d).**
-HARD GATE per tool: existing golden reproduces **bit-identical** post-migration (`--golden` exit 0, hash match; ratchet/mcts/algebra 3×, someone ≥1× at ~8 min). Update the tool's MODULE.md fenced build block (`+ ../../lib/envelope.cpp`). `verify.py --tool <name>` green. On ANY mismatch: STOP that migration, mark SUSPECT, log a DECISION with the diff, move on or halt — never force, never re-baseline.
-Then (later sessions, Phase 5 remainder): `mcp` v1.0.0 (adopt D-022 in that commit) → `orreryd` v0 → `/lab` registry page (publish itself OPERATOR-GATED).
+Phase 5 remainder (next session): **`mcp` v1.0.0 full build loop** — adopt D-022 into DECISIONS.md in that same commit; contract-first (`contracts/mcp.contract.md` + schema), Python (D-005-justified IPC glue), golden = a canned `posit` run; then `orreryd` v0 (queue + budgets + status page), then the `/lab` registry page (**publish itself stays OPERATOR-GATED** — no `git push`/public repo without explicit confirmation). Wave 1 (`hsmi-stab` first) opens only after Phase 5 closes; adopt D-026's pre-contract per tool as each opens.
 
 ## Guards (never violate)
 - Contracts and goldens are FROZEN; migrations are [BEHAVIOR-NEUTRAL] by definition or they are rejected.

@@ -48,7 +48,7 @@ Adoption state: **D-020, D-021 ACTIVE** (this commit); D-022..D-026 remain PROPO
 ## Phase 5 — Infrastructure (Wave 0)  ← CURRENT
 - [DONE] `lib/` per D-020 (envelope.h/.cpp, rng.cuh, reduce.cuh, regime.h, ckpt.h) + MODULE.md + KAT selftest (42 checks green, incl. ref-namespace verbatim cross-check + pinned host/device RNG bit patterns; measured 1-ULP MSVC↔CUDA libm divergence pinned per side). D-013 hash domain unchanged.
 - [DONE] CMake preset (D-021): fat binary verified via cuobjdump (sm_89+sm_90 SASS, compute_120 PTX), static runtimes, fast-math ban; CMake-built selftest green; bare-nvcc path unchanged.
-- [IN_PROGRESS] Migrate to lib, one tool per commit, HARD GATE = existing golden reproduces BIT-IDENTICAL (mismatch ⇒ STOP, SUSPECT, log DECISION — never force/re-baseline): [ ] ratchet (91fce3c4) → [ ] mcts (6c596a53) → [ ] algebra (1526918f) → [ ] someone (aa5b731d).
+- [DONE] Migrate to lib, one tool per commit, HARD GATE = existing golden reproduces BIT-IDENTICAL: **ratchet v1.0.1 (91fce3c4 ✓3×) → mcts v1.0.1 (6c596a53 ✓3×) → algebra v1.0.1 (1526918f ✓3×) → someone v1.1.1 (aa5b731d ✓, ~8-min full run)** — all four bit-identical, zero mismatches; per-tool harness verify GREEN (ratchet/mcts/algebra), someone gate via direct `--golden`. D-020 acceptance fully met 2026-07-09.
 - [NOT_STARTED] `mcp` v1.0.0 full build loop (D-022 — adopt D-022 in that commit).
 - [NOT_STARTED] `orreryd` v0: queue + budgets + status page (D-022).
 - [NOT_STARTED] Phase-4 publish unblocked: `/lab` page reads the registry (site builder: `C:\Websites\finaltheoryofeverything.org\`). Publish itself stays OPERATOR-GATED.
