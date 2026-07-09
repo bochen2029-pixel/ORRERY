@@ -1,0 +1,22 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "windows-sm89-fat",
+      "displayName": "ORRERY fat binary — sm_89 + sm_90 SASS, compute_120 PTX (D-021)",
+      "description": "Run from a vcvars64 shell (ninja + cl come from VS 2022). Static cudart + static MSVC runtime. Fast-math banned.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CUDA_ARCHITECTURES": "89-real;90-real;120"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-sm89-fat",
+      "configurePreset": "windows-sm89-fat"
+    }
+  ]
+}

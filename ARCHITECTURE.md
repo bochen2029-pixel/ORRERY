@@ -69,6 +69,10 @@ Corollary (Ch. 28, the load-bearing truth): **discipline tightens as models get 
 8. **Default language is C/C++/CUDA. Python only where justified** (§7), with the justification in `DECISIONS.md`.
 9. **Every result the science cites carries a `result.lock`.** No lock, not citable.
 10. **The Canon and the contract are updated in the same commit as the tool.** Spec never lags code.
+11. **Every CUDA tool names its oracle** — the independent CPU/analytic reference its correctness is judged against — in §8 and its MODULE.md. A gate failure against the oracle sets run-state **SUSPECT**, never a silent fallback. *(RAYFORMER RF-ORACLE / ADR-007 lesson. Adopted 2026-07-09 with D-020/D-021; oracle column in §8. `someone`'s fp64 CPU replica is named as OWED pending D-025.)*
+12. **Traceability:** no numeric token in any science-facing output is citable unless it traces to a verified tool call; every surface response embeds the `result.lock` hash. *(textverse calculator-binding rule. Adopted 2026-07-09. Scope note: for the bare exe, the lock references the envelope hash — the existing D-008/Invariant-9 mechanism, envelopes unchanged; MCP/API surfaces embed the lock hash in-band when built, D-022.)*
+13. **Unbiased acceleration:** every performance path (mixed precision, importance sampling, batching, graphs) ships with a proof or paired-oracle test that the declared quantity's expectation is unchanged within a declared tolerance — or it does not ship. *(Buddhabrot v4 exact-weighting rule. Adopted 2026-07-09; the fast-math ban in D-021 and the fixed-point quantization note in `lib/reduce.cuh` are its first enforcements.)*
+14. **Frozen external data:** any external dataset a tool consumes (e.g. the DESI chain) is frozen into the repo with sha256 + provenance note; the golden covers the hash. No live fetches in declared paths. *(Adopted 2026-07-09; no current tool consumes external data — binds `everpresent` and later.)*
 
 ## 6 · The Universal Tool Contract (the shape every tool obeys)
 
@@ -102,15 +106,17 @@ The test: *does it need the GPU or C++ speed/scale, or is it symbolic bookkeepin
 
 Seeded from Bo's existing engines (`C:\Users\user\Desktop\DSA\`, `C:\ASTRA-7`, `C:\RAYFORMER`, `C:\buddhabrot-main`) and the QUALIA_LAB receipts.
 
-| Tool | Lang | What it measures | Seeded from | Status |
-|---|---|---|---|---|
-| **someone** | C++/CUDA | Evolutionary Someone-Criterion: encoder/bottleneck/decoder/predictor agents (C2 gap = `pureGap`), viability/stakes/death (C3), zombie-vs-normal ablation; sweep k → is the band an *evolved* optimum? | `dak_evolution_complex.cu` | **DONE v1.1.0** (golden `aa5b731d`, det. 3×, cold two-pass verified; the template) |
-| **ratchet** | C++/CUDA | Branching / phase transition; the (1−p)ρ=p critical point at billions of trials | `criticality_cuda.cu`, `toy_rr_frontier_ratchet.py` | planned |
-| **algebra** | C++/CUDA (cuSOLVER) | Crossed-product entropy-from-observer (F16); the receipted c=1 divergence (Part A) vs cutoff | `toy_cp_divergence.py` | **DONE v1.0.0** (golden `1526918f`, cold two-pass verified; Part-A scoped, D-018) |
-| **posit** | Python | Parsimony auditor (Q3); physics-layer vs overlay posit budget | `posit_counter.py` | **DONE v1.0.0** (golden `7a22dd22`, cold two-pass verified; the Python-is-right tool, D-005) |
-| **mcts** | C++/CUDA | Generic MCTS over a supplied action/parameter space; the search engine the science calls | new | **DONE v1.0.0** (golden `6c596a53`, cold two-pass verified; root-parallel UCT) |
-| **autotune** | Python (glue) | Sweep any tool's params; find the band / basin-of-someone; pre-registered targets | new | **DONE v1.0.0** (golden `c79002f2`, cold two-pass verified; drives the built tools, D-019) |
-| **lens** | CUDA/OptiX | RT-core render of the physics geometry (3D, honestly scoped per ADR-007) | `RAYFORMER`, buddhabrot | backlog |
+| Tool | Lang | What it measures | Seeded from | Oracle (I-11) | Status |
+|---|---|---|---|---|---|
+| **someone** | C++/CUDA | Evolutionary Someone-Criterion: encoder/bottleneck/decoder/predictor agents (C2 gap = `pureGap`), viability/stakes/death (C3), zombie-vs-normal ablation; sweep k → is the band an *evolved* optimum? | `dak_evolution_complex.cu` | fp64 CPU replica at tiny config — **OWED** (D-025 proposed); interim: selftest battery (confound-fix layout hash, gap mechanism, determinism) | **DONE v1.1.0** (golden `aa5b731d`, det. 3×, cold two-pass verified; the template) |
+| **ratchet** | C++/CUDA | Branching / phase transition; the (1−p)ρ=p critical point at billions of trials | `criticality_cuda.cu`, `toy_rr_frontier_ratchet.py` | Galton–Watson analytic `q*^R` (in-tool gate G-THEORY-MISMATCH; MC↔analytic 0.06%) | **DONE v1.0.0** (golden `91fce3c4`, cold two-pass verified; D-015) |
+| **algebra** | C++/CUDA (cuSOLVER) | Crossed-product entropy-from-observer (F16); the receipted c=1 divergence (Part A) vs cutoff | `toy_cp_divergence.py` | Calabrese–Cardy c=1 analytic + the receipt's S(64)/S(128) values (selftest-asserted) | **DONE v1.0.0** (golden `1526918f`, cold two-pass verified; Part-A scoped, D-018) |
+| **posit** | Python | Parsimony auditor (Q3); physics-layer vs overlay posit budget | `posit_counter.py` | hand-checked audit cases (selftest, 12 checks) | **DONE v1.0.0** (golden `7a22dd22`, cold two-pass verified; the Python-is-right tool, D-005) |
+| **mcts** | C++/CUDA | Generic MCTS over a supplied action/parameter space; the search engine the science calls | new | derived-target known optimum (golden asserts all 1024 trees find it) | **DONE v1.0.0** (golden `6c596a53`, cold two-pass verified; root-parallel UCT) |
+| **autotune** | Python (glue) | Sweep any tool's params; find the band / basin-of-someone; pre-registered targets | new | built-in analytic objectives (`peak`/`threshold`, known optima) | **DONE v1.0.0** (golden `c79002f2`, cold two-pass verified; drives the built tools, D-019) |
+| **lens** | CUDA/OptiX | RT-core render of the physics geometry (3D, honestly scoped per ADR-007) | `RAYFORMER`, buddhabrot | n/a (backlog; named at contract time) | backlog |
+
+Shared infrastructure (not tools): **`lib/` — liborrery** (D-020), the invariant core every tool includes (envelope/RNG/reductions/regime/ckpt), KAT-selftested (42 checks), verbatim-extracted from `someone`; consumer migrations are gated on bit-identical golden reproduction.
 
 **Parked SPIKE (pre-registered kill):** *RT-cores as isomorphic compute* for the intrinsically-low-D physics (geodesics, light-cones) — the Carmack move that might win *here* where it lost at high-D attention. Build an honest baseline, measure, retire if it doesn't beat it (RAYFORMER ADR-007 protocol). Not a first build.
 
@@ -124,6 +130,7 @@ Two-pass verification (Ch. 16) is mandatory for any tool whose result the scienc
 
 - **CUDA 13.1, `-arch=sm_89`** (RTX 4070 Ti SUPER, 16 GB). Compile via MSVC 2022 host (vcvars64) — see `BUILD.md`.
 - **Single-file `.cu` per tool where possible; CMake for multi-file** (pattern from `C:\buddhabrot-main`, `C:\ASTRA-7`).
+- **Shared invariant core: `lib/` (liborrery, D-020)** — envelope/RNG/reductions extracted verbatim from the template, KAT-gated; tools compile `../../lib/envelope.cpp` alongside. **Repo CMake preset (D-021):** fat binary (sm_89+sm_90 SASS, compute_120 PTX), static cudart + static MSVC runtime, **fast-math banned**; goldens stay hardware-pinned to sm_89 (re-baseline = operator-signed NOTE.md entry).
 - **Output = JSON to stdout** (machine-parseable, schema-checked). CSV for time-series bulk.
 - **Determinism via seeded curand + fixed launch config**; document any non-associative-reduction caveats.
 - **Repo is standalone** (separate from the theory repo); public on GitHub; a `/lab` page on finaltheoryofeverything.org presents the catalogue + results.

@@ -19,11 +19,21 @@ Then run (note the `.\` on PowerShell/cmd):
 .\someone.exe --pop 200 --gens 200 --steps 800 --N 256 --k 64 --zombie-frac 0.5 --complexity L3 --ensemble 4 --seed 20260705 --json
 ```
 
-## Multi-file tool (use CMake)
-Copy the `CMakeLists.txt` pattern from `C:\buddhabrot-main` or `C:\ASTRA-7`. Configure + build:
+## Tools that use `lib/` (liborrery, D-020) — the standard shape after Wave 0
+Same single-command build, plus the lib translation unit (headers resolve via relative includes):
 ```
-cmd /c '"...\vcvars64.bat" >nul 2>&1 && cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES=89 && cmake --build build --config Release'
+cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 ratchet.cu ../../lib/envelope.cpp -o ratchet.exe'
 ```
+The lib's own KAT selftest (42 checks): build per `lib/MODULE.md`, run **from the repo root**: `.\lib\orrery_selftest.exe`.
+
+**Fast-math is BANNED (D-021/I-13).** Never add `--use_fast_math` to any build line. A kernel wanting it needs per-kernel opt-in + its own golden + a paired-oracle bound.
+
+## Multi-file / repo-level build (CMake preset, D-021)
+`CMakePresets.json` at the repo root: fat binary (sm_89+sm_90 SASS, compute_120 PTX), static cudart + static MSVC runtime. Run from a vcvars64 shell (ninja + cl come from VS 2022):
+```
+cmd /c '"...\vcvars64.bat" >nul 2>&1 && cmake --preset windows-sm89-fat && cmake --build --preset windows-sm89-fat'
+```
+Goldens stay hardware-pinned to sm_89: a fat binary *runs* elsewhere but is NOT expected to reproduce goldens there; re-baselining on new hardware requires an operator-signed NOTE.md entry (old/new hash + arch + reason).
 
 ## Python tool (only where justified, per ARCHITECTURE §7)
 ```

@@ -18,6 +18,9 @@ tools/**/_*.csv
 **/_*.tmp
 runs/_*
 
+# CMake out-of-source builds (D-021 preset)
+build/
+
 # Editor
 .vs/
 *.swp

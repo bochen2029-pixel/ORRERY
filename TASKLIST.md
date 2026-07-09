@@ -38,3 +38,26 @@ Status legend: NOT_STARTED · IN_PROGRESS · DONE · SUSPECT · DEFERRED
 
 ## Critical tools (two-pass required before any science citation)
 someone, algebra (results feed the theory's F16/F6 claims).
+
+---
+
+# Wave-plan addendum (adopted 2026-07-09 per operator ruling; source: `docs/PROPOSAL_2026-07-09_wave_plan.md`)
+
+Adoption state: **D-020, D-021 ACTIVE** (this commit); D-022..D-026 remain PROPOSED — each adopts when its build phase opens (proposal §0 protocol). Invariants I-11..I-14 adopted into ARCHITECTURE §5.
+
+## Phase 5 — Infrastructure (Wave 0)  ← CURRENT
+- [DONE] `lib/` per D-020 (envelope.h/.cpp, rng.cuh, reduce.cuh, regime.h, ckpt.h) + MODULE.md + KAT selftest (42 checks green, incl. ref-namespace verbatim cross-check + pinned host/device RNG bit patterns; measured 1-ULP MSVC↔CUDA libm divergence pinned per side). D-013 hash domain unchanged.
+- [DONE] CMake preset (D-021): fat binary verified via cuobjdump (sm_89+sm_90 SASS, compute_120 PTX), static runtimes, fast-math ban; CMake-built selftest green; bare-nvcc path unchanged.
+- [IN_PROGRESS] Migrate to lib, one tool per commit, HARD GATE = existing golden reproduces BIT-IDENTICAL (mismatch ⇒ STOP, SUSPECT, log DECISION — never force/re-baseline): [ ] ratchet (91fce3c4) → [ ] mcts (6c596a53) → [ ] algebra (1526918f) → [ ] someone (aa5b731d).
+- [NOT_STARTED] `mcp` v1.0.0 full build loop (D-022 — adopt D-022 in that commit).
+- [NOT_STARTED] `orreryd` v0: queue + budgets + status page (D-022).
+- [NOT_STARTED] Phase-4 publish unblocked: `/lab` page reads the registry (site builder: `C:\Websites\finaltheoryofeverything.org\`). Publish itself stays OPERATOR-GATED.
+
+## Phase 6 — Wave 1 (the make-or-break physics; adopt D-026 pre-contract per tool)
+- [NOT_STARTED] `hsmi-stab` (F-K1; first by dignity) → [NOT_STARTED] `trace-born` (C-TRACE) → [NOT_STARTED] `carve` (Layer-2/P2). Each: full loop, oracle named (I-11), two-pass, science-handback memo (the someone S5 pattern).
+
+## Phase 7 — Wave 2
+- [NOT_STARTED] `ratchet-v2` (DP exponents) → `clifford/mipt` → `everpresent` (I-14 frozen DESI data) → `someone-v2` (metabolic k) → `modfluc` (F-SEAM) → `fork` (F-BMV) → `prequent` → `algebra` v1.1 (the owed fixed-site Part-B refit, D-018 deferral).
+
+## Phase 8 — Scale (as needed, gated by demand; adopt D-023/D-024 when opened)
+- [NOT_STARTED] `someone` S-A ensemble-in-grid → S-B CUDA graphs (both BEHAVIOR-NEUTRAL, golden-gated) → S-C fp16 storage flag (ADDITIVE, secondary golden, I-13 paired-oracle) → S-D tensor-core SPIKE (pre-registered kill, ADR-007 protocol) → campaign harness (D-024) → cloud RUNBOOK dry-run.
