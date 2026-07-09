@@ -63,4 +63,5 @@ params: `algebra.exe --regime critical --max-size 1024 --num-sizes 5 --fit-point
 recorded: `goldens/algebra/` (declared hash + stdout + NOTE). Hash domain = {seed, params, result, gates, verdict}, floats `%.6f` (D-013).
 
 ## Change log
+- v1.0.1 — [BEHAVIOR-NEUTRAL, D-020] internal: envelope/CLI spine migrated to `lib/` (liborrery); no flag, field, gate, or exit-code change; golden `1526918f` reproduced bit-identical 3× post-migration (PATCH per semver rules). Scope unchanged: Part A only; the withdrawn Part-B value remains excluded (D-018).
 - v1.0.0 — initial contract. Part-A only: absolute block entropy c-scaling (critical c=1 divergence, verified vs Calabrese–Cardy; massive c≈0 negative control) via cuSOLVER. Explicitly excludes the withdrawn Part-B value. Planned MINOR (v1.1.0): the fixed-**site** relative-entropy finiteness (the owed D-CP refit) with the Casini–Huerta modular kernel validated against a Fock-space ground truth (the mechanism-completing leg).

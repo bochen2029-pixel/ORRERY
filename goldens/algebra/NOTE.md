@@ -22,3 +22,6 @@ The tool is validated against the science's own receipt `toy_cp_divergence.py` (
 
 ## Environment
 `runs/algebra_golden.result.lock`. cuSOLVER (double); cross-version last-ULP drift possible (see MODULE.md) — `%.6f` tolerance is above it.
+
+## Migration record
+- 2026-07-09 · tool v1.0.1 (liborrery migration, D-020): declared hash **unchanged** `1526918f…` (reproduced bit-identical 3×). The envelope's non-hashed `version` field now prints `1.0.1`; `stdout.txt` remains the v1.0.0 freeze-time capture (the gate is `declared.hash`, D-013).

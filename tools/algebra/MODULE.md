@@ -1,5 +1,8 @@
 # MODULE — `algebra`
 
+
+**v1.0.1 (2026-07-09): migrated to `lib/` (liborrery, D-020) — [BEHAVIOR-NEUTRAL], golden `1526918f` reproduced bit-identical 3× post-migration; envelope/CLI spine now `lib/envelope.h` (KAT-pinned; no RNG in this tool). SOLVER_OK stays local (cuSOLVER-specific).**
+
 *The fifth ORRERY tool, and the second two-pass-critical citable one. cuSOLVER. Copies `someone`'s envelope/determinism/golden/two-pass shape. Read `contracts/algebra.contract.md` (v1.0.0) first — the contract is authoritative.*
 
 **Status: DONE v1.0.0** — built, golden frozen (`1526918f`, 3× byte-identical), selftest green (8 checks, validated against the science's own receipt). Critical c=0.9963; massive control c=0.0.
@@ -39,7 +42,7 @@ blake2b KAT; **S(64)==0.85219 & S(128)==1.01696 bits vs the receipt** (the physi
 ## Build
 Single-file CUDA + cuSOLVER, from `tools/algebra/` (see `BUILD.md`). Fenced so `harness/verify.py` can extract it (note the `-lcusolver`):
 ```
-cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 algebra.cu -o algebra.exe -lcusolver'
+cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 algebra.cu ../../lib/envelope.cpp -o algebra.exe -lcusolver'
 ```
 Then: `.\algebra.exe --selftest` · `.\algebra.exe --golden` · `.\algebra.exe --regime {critical|massive} <params> --json`.
 

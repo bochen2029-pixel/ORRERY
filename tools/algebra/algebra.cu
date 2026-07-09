@@ -1,13 +1,15 @@
-// algebra.cu -- ORRERY tool `algebra` (v1.0.0)
+// algebra.cu -- ORRERY tool `algebra` (v1.0.1)
 // Headless, deterministic cuSOLVER tool: the block entanglement-entropy c-scaling of a free-boson
 // chain (the RECEIPTED, ground-truth-checked half of F16/D-CP). Contract: contracts/algebra.contract.md.
 //
 // Measures an entropy-scaling law (structure/physics), NEVER qualia. III-sealed. Scope is deliberately
 // narrow: Part A only (c=1 divergence / c=0 massive control); the WITHDRAWN Part-B value is NOT computed.
 // Ports the Part-A leg of QUALIA_LAB gym/receipts/toy_cp_divergence.py.
+// v1.0.1 [BEHAVIOR-NEUTRAL, D-020]: envelope/CLI spine now from lib/ (liborrery) instead of local
+// copies -- declared output bit-identical, golden 1526918f unchanged. SOLVER_OK stays local (cuSOLVER).
 //
 // Build (from tools/algebra/, see BUILD.md -- needs cuSOLVER):
-//   cmd /c '"...\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 algebra.cu -o algebra.exe -lcusolver'
+//   cmd /c '"...\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 algebra.cu ../../lib/envelope.cpp -o algebra.exe -lcusolver'
 
 #include <cuda_runtime.h>
 #include <cusolverDn.h>
@@ -19,55 +21,18 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include "../../lib/envelope.h"   // blake2b, fmt6/fmti/jesc, golden plumbing, CLI spine, CUDA_OK (D-020)
+using namespace orrery;
 
-static const char* ALGEBRA_VERSION = "1.0.0";
+static const char* ALGEBRA_VERSION = "1.0.1";
 static const double LOG2 = 0.6931471805599453;
 static const char* FIREWALL =
     "This measures an entropy-scaling law (structure/physics); it says nothing about whether anything "
     "feels (acquaintance) - III-sealed. Finite-dim is Type I: we reproduce the cutoff-running that "
     "forces the crossed product, not the trace-free Type III_1 factor.";
 
-#define CUDA_OK(call) do { cudaError_t _e=(call); if(_e!=cudaSuccess){ \
-    fprintf(stderr,"CUDA error %s at %s:%d: %s\n",#call,__FILE__,__LINE__,cudaGetErrorString(_e)); std::exit(2);} } while(0)
 #define SOLVER_OK(call) do { cusolverStatus_t _s=(call); if(_s!=CUSOLVER_STATUS_SUCCESS){ \
     fprintf(stderr,"cuSOLVER error %s at %s:%d: status %d\n",#call,__FILE__,__LINE__,(int)_s); std::exit(2);} } while(0)
-
-// ------------------------------------------------------------------ BLAKE2b-256 (host) [KAT-validated]
-struct Blake2b {
-    uint64_t h[8]; uint64_t t[2]; uint8_t buf[128]; size_t buflen; size_t outlen;
-    static uint64_t rotr64(uint64_t x, unsigned n){ return (x >> n) | (x << (64 - n)); }
-    void init(size_t out){ static const uint64_t IV[8]={0x6a09e667f3bcc908ULL,0xbb67ae8584caa73bULL,0x3c6ef372fe94f82bULL,0xa54ff53a5f1d36f1ULL,
-        0x510e527fade682d1ULL,0x9b05688c2b3e6c1fULL,0x1f83d9abfb41bd6bULL,0x5be0cd19137e2179ULL};
-        outlen=out; for(int i=0;i<8;i++) h[i]=IV[i]; h[0]^=0x01010000ULL^(uint64_t)out; t[0]=t[1]=0; buflen=0; }
-    void compress(const uint8_t* block,bool last){ static const uint64_t IV[8]={0x6a09e667f3bcc908ULL,0xbb67ae8584caa73bULL,0x3c6ef372fe94f82bULL,0xa54ff53a5f1d36f1ULL,
-        0x510e527fade682d1ULL,0x9b05688c2b3e6c1fULL,0x1f83d9abfb41bd6bULL,0x5be0cd19137e2179ULL};
-        static const uint8_t S[12][16]={{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},{14,10,4,8,9,15,13,6,1,12,0,2,11,7,5,3},
-            {11,8,12,0,5,2,15,13,10,14,3,6,7,1,9,4},{7,9,3,1,13,12,11,14,2,6,5,10,4,0,15,8},{9,0,5,7,2,4,10,15,14,1,11,12,6,8,3,13},
-            {2,12,6,10,0,11,8,3,4,13,7,5,15,14,1,9},{12,5,1,15,14,13,4,10,0,7,6,3,9,2,8,11},{13,11,7,14,12,1,3,9,5,0,15,4,8,6,2,10},
-            {6,15,14,9,11,3,0,8,12,2,13,7,1,4,10,5},{10,2,8,4,7,6,1,5,15,11,9,14,3,12,13,0},{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},{14,10,4,8,9,15,13,6,1,12,0,2,11,7,5,3}};
-        uint64_t m[16],v[16]; for(int i=0;i<16;i++){ m[i]=0; for(int j=0;j<8;j++) m[i]|=(uint64_t)block[i*8+j]<<(8*j); }
-        for(int i=0;i<8;i++){ v[i]=h[i]; v[i+8]=IV[i]; } v[12]^=t[0]; v[13]^=t[1]; if(last) v[14]^=0xFFFFFFFFFFFFFFFFULL;
-        #define G(a,b,c,d,x,y) do{ v[a]=v[a]+v[b]+x; v[d]=rotr64(v[d]^v[a],32); v[c]=v[c]+v[d]; v[b]=rotr64(v[b]^v[c],24); \
-            v[a]=v[a]+v[b]+y; v[d]=rotr64(v[d]^v[a],16); v[c]=v[c]+v[d]; v[b]=rotr64(v[b]^v[c],63);}while(0)
-        for(int r=0;r<12;r++){ const uint8_t* s=S[r];
-            G(0,4,8,12,m[s[0]],m[s[1]]);G(1,5,9,13,m[s[2]],m[s[3]]);G(2,6,10,14,m[s[4]],m[s[5]]);G(3,7,11,15,m[s[6]],m[s[7]]);
-            G(0,5,10,15,m[s[8]],m[s[9]]);G(1,6,11,12,m[s[10]],m[s[11]]);G(2,7,8,13,m[s[12]],m[s[13]]);G(3,4,9,14,m[s[14]],m[s[15]]); }
-        #undef G
-        for(int i=0;i<8;i++) h[i]^=v[i]^v[i+8]; }
-    void update(const uint8_t* in,size_t inlen){ while(inlen>0){ if(buflen==128){ t[0]+=128; if(t[0]<128)t[1]++; compress(buf,false); buflen=0; }
-        size_t take=128-buflen; if(take>inlen)take=inlen; memcpy(buf+buflen,in,take); buflen+=take; in+=take; inlen-=take; } }
-    void final(uint8_t* out){ t[0]+=buflen; if(t[0]<buflen)t[1]++; memset(buf+buflen,0,128-buflen); compress(buf,true);
-        for(size_t i=0;i<outlen;i++) out[i]=(uint8_t)(h[i>>3]>>(8*(i&7))); }
-};
-static std::string blake2b_hex(const std::string& msg,size_t outlen=32){ Blake2b b; b.init(outlen);
-    b.update((const uint8_t*)msg.data(),msg.size()); std::vector<uint8_t> o(outlen); b.final(o.data());
-    static const char* hx="0123456789abcdef"; std::string s; for(size_t i=0;i<outlen;i++){ s.push_back(hx[o[i]>>4]); s.push_back(hx[o[i]&15]); } return s; }
-
-// ------------------------------------------------------------------ serialization
-static std::string fmt6(double x){ if(std::fabs(x)<0.5e-6) x=0.0; char b[64]; snprintf(b,sizeof(b),"%.6f",x); return std::string(b); }
-static std::string fmti(long long x){ char b[32]; snprintf(b,sizeof(b),"%lld",x); return std::string(b); }
-static std::string jesc(const std::string& s){ std::string o; for(char c:s){ switch(c){
-    case '"':o+="\\\"";break; case '\\':o+="\\\\";break; case '\n':o+="\\n";break; case '\t':o+="\\t";break; case '\r':o+="\\r";break; default:o.push_back(c);} } return o; }
 
 // ------------------------------------------------------------------ device kernels (col-major, n<=nmax)
 // X_A[i][j]=0.5 sum_k V[i+kL] V[j+kL]/sqrt(w_k);  P_A[i][j]=0.5 sum_k V[i+kL] V[j+kL]*sqrt(w_k)  (i,j<n)
@@ -197,7 +162,7 @@ static std::string declared_body(const Params& P,const Result& R,const std::stri
     return "\"seed\":"+fmti(P.seed)+",\"params\":"+params_json(P)+",\"result\":"+result_json(P,R)+",\"gates\":"+gates_json(R)+",\"verdict\":\""+v+"\""; }
 static std::string declared_object(const Params& P,const Result& R,const std::string& v){ return "{"+declared_body(P,R,v)+"}"; }
 static std::string full_envelope(const Params& P,const Result& R,const std::string& v){
-    return "{\"tool\":\"algebra\",\"version\":\""+std::string(ALGEBRA_VERSION)+"\","+declared_body(P,R,v)+",\"notes\":\""+jesc(FIREWALL)+"\"}"; }
+    return orrery::full_envelope("algebra", ALGEBRA_VERSION, declared_body(P,R,v), FIREWALL); }
 
 static int run_config(const Params& P,bool do_print,std::string* declared_out){
     std::vector<std::string> csv; std::vector<std::string>* csvp=(do_print&&P.csv)?&csv:nullptr;
@@ -211,16 +176,10 @@ static int run_config(const Params& P,bool do_print,std::string* declared_out){
 
 // ------------------------------------------------------------------ golden / selftest
 static Params golden_params(){ Params P; P.regime=0; P.max_size=1024; P.num_sizes=5; P.fit_points=4; P.tol=0.15; P.seed=0; P.json=true; P.seed_set=true; return P; }
-static bool read_golden_hash(std::string& out){ const char* paths[]={"goldens/algebra/declared.hash","../../goldens/algebra/declared.hash","../../../goldens/algebra/declared.hash"};
-    for(const char* p:paths){ FILE* f=fopen(p,"rb"); if(f){ char b[256]; size_t n=fread(b,1,sizeof(b)-1,f); fclose(f); b[n]=0; std::string s(b);
-        while(!s.empty()&&(s.back()=='\n'||s.back()=='\r'||s.back()==' '||s.back()=='\t')) s.pop_back(); size_t sp=s.find_first_of(" \t\r\n"); if(sp!=std::string::npos) s=s.substr(0,sp); out=s; return true; } } return false; }
 static int run_golden(){ Params P=golden_params(); Result R=run_algebra(P,nullptr); std::string v=R.g_wrong?"fail":"pass";
-    std::string declared=declared_object(P,R,v); std::string h=blake2b_hex(declared); printf("%s\n", full_envelope(P,R,v).c_str());
-    std::string frozen; if(read_golden_hash(frozen)){ if(h==frozen){ fprintf(stderr,"GOLDEN OK blake2b=%s\n",h.c_str()); return 0; }
-        fprintf(stderr,"GOLDEN MISMATCH\n  got   %s\n  want  %s\n",h.c_str(),frozen.c_str()); return 1; }
-    fprintf(stderr,"GOLDEN NOT FROZEN (bootstrap) blake2b=%s\n  freeze into goldens/algebra/declared.hash\n",h.c_str()); return 0; }
+    return golden_check("algebra", declared_object(P,R,v), full_envelope(P,R,v)); }
 
-static bool st(const char* n,bool ok){ fprintf(stderr,"  [%s] %s\n",ok?"PASS":"FAIL",n); return ok; }
+static bool st(const char* n,bool ok){ return st_check(n, ok); }
 static int run_selftest(){
     bool ok=true; fprintf(stderr,"algebra --selftest (v%s)\n",ALGEBRA_VERSION);
     ok &= st("blake2b-256(\"abc\") KAT", blake2b_hex("abc")=="bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319");
@@ -243,9 +202,8 @@ static int run_selftest(){
 }
 
 // ------------------------------------------------------------------ CLI
-static void die2(const std::string& m){ fprintf(stderr,"error: %s\n",m.c_str()); std::exit(2); }
-static long long p_ll(const char* s,const char* f){ char* e=nullptr; long long v=strtoll(s,&e,10); if(e==s||*e!=0) die2(std::string("bad integer for ")+f+": "+s); return v; }
-static double p_d(const char* s,const char* f){ char* e=nullptr; double v=strtod(s,&e); if(e==s||*e!=0) die2(std::string("bad number for ")+f+": "+s); return v; }
+static long long p_ll(const char* s,const char* f){ return parse_ll(s,f); }
+static double p_d(const char* s,const char* f){ return parse_d(s,f); }
 
 int main(int argc,char** argv){
     Params P;
