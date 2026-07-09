@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ORRERY mcp v1.0.0 --json/--golden output envelope",
+  "description": "The chain-check envelope. The MCP protocol responses (--serve/--once) are JSON-RPC 2.0 and are specified in mcp.contract.md, not here; this schema covers the tool's own declared envelope (D-013 hash domain = {seed,params,result,gates,verdict}).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "mcp" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chain_tool", "v1_catalogue", "timeout_s"],
+      "properties": {
+        "chain_tool": { "const": "posit" },
+        "v1_catalogue": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": { "type": "string" }
+        },
+        "timeout_s": { "type": "integer", "minimum": 1, "maximum": 3600 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jsonrpc_roundtrip_ok", "tools_exposed", "v1_catalogue_complete",
+                   "chain_tool", "chain_exit_class", "chain_declared_blake2b", "chain_matches_frozen"],
+      "properties": {
+        "jsonrpc_roundtrip_ok": { "type": "boolean" },
+        "tools_exposed": { "type": "integer", "minimum": 0 },
+        "v1_catalogue_complete": { "type": "boolean" },
+        "chain_tool": { "const": "posit" },
+        "chain_exit_class": { "enum": ["pass", "gate-fired", "error", "timeout"] },
+        "chain_declared_blake2b": { "type": "string", "pattern": "^([0-9a-f]{64}|)$" },
+        "chain_matches_frozen": { "type": "boolean" }
+      }
+    },
+    "verdict": { "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "enum": ["G-CHAIN-MISMATCH", "G-REGISTRY-INCOMPLETE"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

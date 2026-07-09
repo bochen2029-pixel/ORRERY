@@ -17,6 +17,7 @@ tools/**/_*.json
 tools/**/_*.csv
 **/_*.tmp
 runs/_*
+runs/mcp/
 
 # CMake out-of-source builds (D-021 preset)
 build/

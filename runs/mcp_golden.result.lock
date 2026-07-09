@@ -1,0 +1,30 @@
+# result.lock — mcp golden (the frozen behavioral anchor of the surface)
+
+tool:            mcp
+version:         1.0.0
+result_kind:     golden (MCP surface chain check: protocol round-trip + I-12 hash chain via posit)
+
+# --- binary / toolchain ---
+binary_blake2b:  976ec72fe5dc6235fca06f2f7acff739d3447811e9220a03514e4c0b8dce2bf8  (mcp.py source; Python tool)
+gpu_arch:        n/a (no compute)
+gpu_device:      n/a
+cuda:            n/a
+host_compiler:   Python 3.13.2
+build_cmd:       python -m py_compile mcp.py
+
+# --- invocation ---
+seed:            0
+params:          chain_tool=posit v1_catalogue=[algebra,autotune,mcts,posit,ratchet,someone] timeout_s=120
+cli:             python mcp.py --golden
+
+# --- declared output ---
+declared_blake2b: 174ec02d134acafd28a99b45db1f5c5c2544f5e1669137c846273e6e55998822
+determinism:      byte-identical across 3 consecutive --golden runs (exact: no RNG anywhere)
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, gate values %.6f (D-013)
+result:           jsonrpc_roundtrip_ok=true tools_exposed=6 v1_catalogue_complete=true
+                  chain_exit_class=pass chain_declared_blake2b=7a22dd22... chain_matches_frozen=true
+finding:          the surface reproduces the instrument's own citation chain end-to-end: a generic
+                  run_tool subprocess of posit --golden yields the exact frozen declared hash (I-12).
+run_marker:       ORRERY mcp golden freeze; repo commit = the commit adding this lock
+notes:            A transport surface: computes nothing scientific; III-sealed. DELIBERATE COUPLING
+                  to posit's golden (see goldens/mcp/NOTE.md re-baseline protocol).
