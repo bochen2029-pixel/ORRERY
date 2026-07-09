@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ORRERY orreryd v0.1.0 --json/--golden output envelope",
+  "description": "The canned-drain envelope. Daemon-mode job records and status files are specified in orreryd.contract.md and are operational (non-declared); this schema covers the tool's own declared envelope (D-013 hash domain = {seed,params,result,gates,verdict}).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "orreryd" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chain_tool", "jobs_submitted", "budget_s"],
+      "properties": {
+        "chain_tool": { "const": "posit" },
+        "jobs_submitted": { "const": 3 },
+        "budget_s": { "type": "integer", "minimum": 1, "maximum": 3600 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jobs_submitted", "jobs_completed", "order_ok", "exit_classes",
+                   "chain_declared_blake2b", "chain_matches_frozen", "done_sentinel"],
+      "properties": {
+        "jobs_submitted": { "type": "integer", "minimum": 0 },
+        "jobs_completed": { "type": "integer", "minimum": 0 },
+        "order_ok": { "type": "boolean" },
+        "exit_classes": {
+          "type": "array",
+          "items": { "enum": ["pass", "gate-fired", "error", "timeout"] }
+        },
+        "chain_declared_blake2b": { "type": "string", "pattern": "^([0-9a-f]{64}|)$" },
+        "chain_matches_frozen": { "type": "boolean" },
+        "done_sentinel": { "type": "boolean" }
+      }
+    },
+    "verdict": { "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "enum": ["G-CHAIN-MISMATCH", "G-DRAIN-INCOMPLETE"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

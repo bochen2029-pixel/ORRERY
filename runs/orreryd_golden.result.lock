@@ -1,0 +1,31 @@
+# result.lock — orreryd golden (the frozen behavioral anchor of the daemon)
+
+tool:            orreryd
+version:         0.1.0
+result_kind:     golden (canned 3-job drain: FIFO serialization + error containment + I-12 chain + .DONE)
+
+# --- binary / toolchain ---
+binary_blake2b:  3c4c745b8bfb63bffc9fca99874616cce8285c5e09b75a4ccc713e2487899589
+source_blake2b:  dd6760c6506a5a267101e0ef791f4bac34f23b2e0a4721dc97ffc2a6156aa7eb  (orreryd.cpp; links lib/envelope.cpp — liborrery D-020)
+gpu_arch:        n/a (host-only C++20; the daemon spawns the GPU tools)
+gpu_device:      n/a
+cuda:            n/a
+host_compiler:   MSVC 2022 (cl /O2 /std:c++20 /EHsc, vcvars64)
+build_cmd:       cl /nologo /O2 /std:c++20 /EHsc orreryd.cpp ../../lib/envelope.cpp /Fe:orreryd.exe
+
+# --- invocation ---
+seed:            0
+params:          chain_tool=posit jobs_submitted=3 budget_s=120
+cli:             orreryd.exe --golden
+
+# --- declared output ---
+declared_blake2b: 86f133bb0a676ce7f3f7737aaa30eb46567371cf468bf8c7c5377b123e1b3ef8
+determinism:      byte-identical across 3 consecutive --golden runs (exact: no RNG anywhere)
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, gate values %.6f (D-013)
+result:           jobs 3/3, order_ok, exit_classes=[pass,error,pass], chain_matches_frozen=true
+                  (posit 7a22dd22... through the real drain loop), done_sentinel=true
+finding:          the daemon serializes, contains errors, budgets (live: 2s kill of an oversized GPU
+                  job, exit_class=timeout code 258), and preserves the I-12 citation chain end-to-end.
+run_marker:       ORRERY orreryd golden freeze; repo commit = the commit adding this lock
+notes:            A scheduling surface: computes nothing scientific; III-sealed. DELIBERATE COUPLING
+                  to posit's golden (goldens/orreryd/NOTE.md re-baseline protocol).

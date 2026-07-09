@@ -13,6 +13,7 @@ Each tool is a module: one directory, one `MODULE.md`, one contract (in `../cont
 | mcts | C++/CUDA | **DONE v1.0.1** (golden `6c596a53`; det. 3×; root-parallel UCT; **cold two-pass verified**; v1.0.1 = liborrery migration, golden bit-identical) | `tools/mcts/` |
 | autotune | Python (glue) | **DONE v1.0.0** (golden `c79002f2`; det. exact; drives the built tools — found ratchet's ρ_c; **cold two-pass verified** — CONFORMANT) | `tools/autotune/` |
 | **mcp** | Python | **DONE v1.0.0** (golden `174ec02d`; det. exact; the MCP surface, D-022 — six JSON-RPC tools, I-12 hash chain; live-smoked driving ratchet on GPU) | `tools/mcp/` |
+| **orreryd** | C++20 (host) | **DONE v0.1.0** (golden `86f133bb`; det. exact; the job daemon, D-022 v0 — spool FIFO + budgets + sentinels + status page, on liborrery; live-smoked GPU drain + budget kill) | `tools/orreryd/` |
 | lens | CUDA/OptiX | backlog (3D viz first; compute-spike parked) | `tools/lens/` |
 
 All four CUDA tools build against **`lib/` (liborrery, D-020)** — the invariant core (envelope/RNG/reductions), KAT-selftested, extracted verbatim from `someone`. Build commands gain `../../lib/envelope.cpp`; each migration was gated on bit-identical golden reproduction.

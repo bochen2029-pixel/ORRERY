@@ -18,6 +18,8 @@ tools/**/_*.csv
 **/_*.tmp
 runs/_*
 runs/mcp/
+_orreryd_*/
+tools/orreryd/_*/
 
 # CMake out-of-source builds (D-021 preset)
 build/
