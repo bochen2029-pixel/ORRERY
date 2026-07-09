@@ -19,8 +19,11 @@
 ## `mcp` v1.0.0 BUILT + VERIFIED (tool #7, D-022 adopted Active) — the instrument is LLM-callable
 Contract v1.0.0 + schema + MODULE + `mcp.py` (stdio JSON-RPC 2.0; six tools: list_tools, describe_contract-verbatim, run_tool, get_run, sweep→autotune, golden_status). **I-12 live:** every run response embeds the D-013 declared blake2b (textual extraction from the fixed-order envelope) + artifact blake2b. Golden `174ec02d` (3× byte-identical; the canned-posit chain — deliberate narrow coupling, re-baseline protocol in goldens/mcp/NOTE.md). Selftest 13/13. Polyglot harness GREEN. Live smoke drove a real ratchet GPU run through --serve. Pre-commit smoke caught + fixed a real defect (param keys rejected the catalogue's uppercase --R/--N). **Cold two-pass: CONFORMANT 10/10, no defects** (`runs/mcp_twopass_verify.md`).
 
+## `orreryd` v0.1.0 BUILT + VERIFIED (tool #8, D-022 v0) — the unattended-run surface
+C++20 on liborrery (first NEW lib consumer), no threads. File-spool serializer: one GPU tenant FIFO, per-job budgets (live-proven 2s kill), `.stop`/`.DONE` sentinels, atomic status page, I-12 hashes on every record. Golden `86f133bb` (3×; canned 3-job drain: order + error containment + posit chain + `.DONE`). Selftest 13/13; harness GREEN; live smokes (real GPU drain, budget kill). **Cold two-pass: CONFORMANT 13/13, no defects — incl. cold rebuild from source reproducing the golden** (`runs/orreryd_twopass_verify.md`). v0 exclusions documented (CUDA-stream tenancy, HTTP API, mcp enqueue).
+
 ## Next concrete action
-Phase 5 remainder (next session): **`orreryd` v0** (queue + budgets + status page — under the already-Active D-022), then the `/lab` registry page (**publish itself stays OPERATOR-GATED** — no `git push`/public repo without explicit confirmation). Also candidate: `someone`'s owed fp64 CPU oracle (I-11/D-025). Wave 1 (`hsmi-stab` first, D-026 pre-contract adopted at open) starts after Phase 5 closes.
+Phase 5 remainder (next session): the **`/lab` registry page** (site builder: `C:\Websitesinaltheoryofeverything.org\`; the page reads the registry — publish itself stays OPERATOR-GATED, no `git push`/public repo without explicit confirmation). Also candidate: `someone`'s owed fp64 CPU oracle (I-11/D-025). **Then Phase 5 closes and Wave 1 opens: `hsmi-stab` first** (D-026 pre-contract adopted at open; full-budget session — it is the make-or-break falsifier).
 
 ## Guards (never violate)
 - Contracts and goldens are FROZEN; migrations are [BEHAVIOR-NEUTRAL] by definition or they are rejected.
