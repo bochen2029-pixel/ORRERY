@@ -22,3 +22,6 @@ A *fast-ish* representative slice of the real experiment: L3 (full complexity, w
 
 ## Environment of the freeze
 Recorded in `runs/someone_golden.result.lock` (tool semver, binary blake2b, GPU arch sm_89 + device, CUDA 13.1, host compiler, the exact CLI, the declared hash, git commit).
+
+## Migration record
+- 2026-07-09 · tool v1.1.1 (liborrery migration, D-020): declared hash **unchanged** `aa5b731d…` (reproduced bit-identical). The envelope's non-hashed `version` field now prints `1.1.1`; `stdout.txt` remains the v1.1.0 freeze-time capture (the gate is `declared.hash`, D-013).

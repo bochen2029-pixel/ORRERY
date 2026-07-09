@@ -1,5 +1,8 @@
 # MODULE — `someone`
 
+
+**v1.1.1 (2026-07-09): migrated to `lib/` (liborrery, D-020) — [BEHAVIOR-NEUTRAL]. someone was the TEMPLATE the lib was extracted from; this migration deletes its local copies (D-012 RNG kit, blake2b, canonical serializers, blockReduce reductions, CLI/golden spine) in favor of the KAT-pinned lib versions. Golden `aa5b731d` reproduced bit-identical post-migration.**
+
 *The first ORRERY tool and the template every later tool copies. Read `contracts/someone.contract.md` (v1.1.0) first — the contract is authoritative; this doc explains the implementation behind it.*
 
 ## Purpose
@@ -68,7 +71,7 @@ One invocation = one complexity level over `--ensemble` seeded replicas (replica
 ## Build
 Single-file CUDA, from `tools/someone/` (see `BUILD.md`):
 ```
-cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 someone.cu -o someone.exe'
+cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 someone.cu ../../lib/envelope.cpp -o someone.exe'
 ```
 Then: `.\someone.exe --selftest` · `.\someone.exe --golden` · `.\someone.exe <params> --json`.
 

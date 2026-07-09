@@ -6,13 +6,15 @@ Each tool is a module: one directory, one `MODULE.md`, one contract (in `../cont
 
 | Tool | Lang | Status | Dir |
 |---|---|---|---|
-| **someone** | C++/CUDA | **DONE v1.1.0** (golden `aa5b731d`; det. 3×; **cold two-pass verified** — independent, CONFORMANT) | `tools/someone/` |
-| ratchet | C++/CUDA | **DONE v1.0.0** (golden `91fce3c4`; det. 3×; MC↔analytic 0.06%; **cold two-pass verified** — caught+fixed a harness-wiring defect, now GREEN) | `tools/ratchet/` |
-| algebra | C++/CUDA (cuSOLVER) | **DONE v1.0.0** (golden `1526918f`; det. 3×; c=1 validated vs receipt; Part-A scoped; **cold two-pass verified** — CONFORMANT, scope confirmed) | `tools/algebra/` |
+| **someone** | C++/CUDA | **DONE v1.1.1** (golden `aa5b731d`; det. 3×; **cold two-pass verified** — independent, CONFORMANT; v1.1.1 = liborrery migration, golden bit-identical) | `tools/someone/` |
+| ratchet | C++/CUDA | **DONE v1.0.1** (golden `91fce3c4`; det. 3×; MC↔analytic 0.06%; **cold two-pass verified**; v1.0.1 = liborrery migration, golden bit-identical) | `tools/ratchet/` |
+| algebra | C++/CUDA (cuSOLVER) | **DONE v1.0.1** (golden `1526918f`; det. 3×; c=1 validated vs receipt; Part-A scoped; **cold two-pass verified**; v1.0.1 = liborrery migration, golden bit-identical) | `tools/algebra/` |
 | posit | Python | **DONE v1.0.0** (golden `7a22dd22`; det. exact; the Python-is-right tool, D-005; **cold two-pass verified** — CONFORMANT) | `tools/posit/` |
-| mcts | C++/CUDA | **DONE v1.0.0** (golden `6c596a53`; det. 3×; root-parallel UCT; **cold two-pass verified** — CONFORMANT) | `tools/mcts/` |
+| mcts | C++/CUDA | **DONE v1.0.1** (golden `6c596a53`; det. 3×; root-parallel UCT; **cold two-pass verified**; v1.0.1 = liborrery migration, golden bit-identical) | `tools/mcts/` |
 | autotune | Python (glue) | **DONE v1.0.0** (golden `c79002f2`; det. exact; drives the built tools — found ratchet's ρ_c; **cold two-pass verified** — CONFORMANT) | `tools/autotune/` |
 | lens | CUDA/OptiX | backlog (3D viz first; compute-spike parked) | `tools/lens/` |
+
+All four CUDA tools build against **`lib/` (liborrery, D-020)** — the invariant core (envelope/RNG/reductions), KAT-selftested, extracted verbatim from `someone`. Build commands gain `../../lib/envelope.cpp`; each migration was gated on bit-identical golden reproduction.
 
 ## Language rule (ARCHITECTURE §7, DECISIONS D-005)
 CUDA/C++ for compute/scale; Python only for symbolic/accounting/glue, justification in `DECISIONS.md`. `posit` is the only Python-is-right tool so far.
