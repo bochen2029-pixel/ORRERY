@@ -23,7 +23,7 @@ Contract v1.0.0 + schema + MODULE + `mcp.py` (stdio JSON-RPC 2.0; six tools: lis
 C++20 on liborrery (first NEW lib consumer), no threads. File-spool serializer: one GPU tenant FIFO, per-job budgets (live-proven 2s kill), `.stop`/`.DONE` sentinels, atomic status page, I-12 hashes on every record. Golden `86f133bb` (3×; canned 3-job drain: order + error containment + posit chain + `.DONE`). Selftest 13/13; harness GREEN; live smokes (real GPU drain, budget kill). **Cold two-pass: CONFORMANT 13/13, no defects — incl. cold rebuild from source reproducing the golden** (`runs/orreryd_twopass_verify.md`). v0 exclusions documented (CUDA-stream tenancy, HTTP API, mcp enqueue).
 
 ## Next concrete action
-Phase 5 remainder (next session): the **`/lab` registry page** (site builder: `C:\Websitesinaltheoryofeverything.org\`; the page reads the registry — publish itself stays OPERATOR-GATED, no `git push`/public repo without explicit confirmation). Also candidate: `someone`'s owed fp64 CPU oracle (I-11/D-025). **Then Phase 5 closes and Wave 1 opens: `hsmi-stab` first** (D-026 pre-contract adopted at open; full-budget session — it is the make-or-break falsifier).
+Phase 5 remainder (next session): the **`/lab` registry page** (site builder: `C:\Websites\finaltheoryofeverything.org\`; the page reads the registry — publish itself stays OPERATOR-GATED, no `git push`/public repo without explicit confirmation). Also candidate: `someone`'s owed fp64 CPU oracle (I-11/D-025). **Then Phase 5 closes and Wave 1 opens: `hsmi-stab` first** (D-026 pre-contract adopted at open; full-budget session — it is the make-or-break falsifier).
 
 ## Guards (never violate)
 - Contracts and goldens are FROZEN; migrations are [BEHAVIOR-NEUTRAL] by definition or they are rejected.
