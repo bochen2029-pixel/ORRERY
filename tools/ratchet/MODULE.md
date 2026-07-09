@@ -2,7 +2,7 @@
 
 *The second ORRERY tool — copies `someone`'s shape (envelope, determinism, golden, two-pass). Read `contracts/ratchet.contract.md` (v1.0.0) first — the contract is authoritative.*
 
-**Status: DONE v1.0.0** — built, golden frozen (`91fce3c4`, 3× byte-identical), selftest green, cold two-pass in progress. MC↔analytic rel_error 0.06% at the golden.
+**Status: DONE v1.0.1** — built, golden frozen (`91fce3c4`, 3× byte-identical), selftest green, cold two-pass CONFORMANT. MC↔analytic rel_error 0.06% at the golden. **v1.0.1 (2026-07-09): migrated to `lib/` (liborrery, D-020) — [BEHAVIOR-NEUTRAL], golden reproduced bit-identical 3× post-migration.**
 
 ## Purpose
 GPU Monte-Carlo of the recoverability-frontier **branching ratchet**, verifying the redundancy critical threshold **(1−p)ρ = p** (science F13, throat T-RATE) at billions of trajectories. A record in R independent fragments is rewritten; each fragment per step dies w.p. p (Crooks price) or re-broadcasts w.p. ρ. This is a Galton-Watson process with per-lineage extinction `q* = min(1, p/((1−p)ρ))` and P[record ever unwritten] = `q*^R`; supercritical iff (1−p)ρ > p. The tool measures P[unwrite] and checks it against this analytic law (which *contains* the threshold).
@@ -19,7 +19,7 @@ Physics from `C:\Fable_LLC\QUALIA_LAB\gym\receipts\toy_rr_frontier_ratchet.py` (
 ## Internal design (as built)
 - **One thread per trajectory**, grid-stride over `--trials` (fixed 4096×256 launch; embarrassingly parallel — the natural GPU shape, unlike `someone`'s one-block-per-agent). A trajectory holds a fragment count `n` (start R). Per step, loop the `n` fragments; each draws one uniform `u = u01(hash4(seed,traj,step,frag))` and the offspring law maps it: `u<p` → 0 (unwrite), `u<p+(1−p)(1−ρ)` → 1, else → 2. Sum to `next`; **early-escape** breaks the fragment loop the instant `next ≥ cap` (the trajectory escapes regardless of remaining fragments — deterministic, and it bounds the per-step work to ≤cap). Loop until `n=0` (extinct: record survival step) / `n≥cap` (escape) / `step=tmax` (persist).
 - **Sampling:** exact per-fragment Bernoulli (not an approximation), so a MC↔analytic mismatch means a *real* deviation, not sampler error. With `cap=256` the per-trajectory work is ~1.5k draws; the golden's 4M trajectories run in ~0.5 s. *(Scale note: for billions of trials, O(1) binomial sampling — `Binomial(n,1−p)` survivors then `Binomial(survivors,ρ)` rebroadcasters — would replace the O(n) fragment loop; that changes RNG consumption ⇒ a golden-superseding optimization, deferred. D-015.)*
-- **RNG:** counter-based (reuses `someone`'s splitmix64/`hash4`/`u01`), keyed by (seed, trajectory, step, fragment). No per-thread RNG state, no wall-clock.
+- **RNG:** counter-based (`lib/rng.cuh` — the D-012 kit, KAT-pinned; v1.0.0 carried a local copy of the same functions), keyed by (seed, trajectory, step, fragment). No per-thread RNG state, no wall-clock. Envelope/golden/CLI spine from `lib/envelope.h` (D-020).
 - **Reductions:** the extinction/escape tallies, survival-step sum, and survival-time histogram are all **integer** `atomicAdd`s (associative ⇒ order-independent ⇒ deterministic — this is why ratchet's determinism is *structurally trivial* where `someone`'s needed care). `p_unwrite_mc` = extinct/trials (int/int). **No float atomics anywhere.**
 - **Analytic:** `q_star`, `p_unwrite_analytic`, `rho_c`, `regime` computed exactly on the host from (p, ρ, R); the gate compares MC vs analytic.
 
@@ -39,7 +39,7 @@ Trivial vs `someone`: every random value is a pure function of (seed, trajectory
 ## Build
 Single-file CUDA, from `tools/ratchet/` (see `BUILD.md`). The command lives in a fenced block so `harness/verify.py`'s `extract_build_cmd` can discover it (an inline code span is NOT picked up — the defect the cold two-pass caught):
 ```
-cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 ratchet.cu -o ratchet.exe'
+cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 && nvcc -O3 -arch=sm_89 ratchet.cu ../../lib/envelope.cpp -o ratchet.exe'
 ```
 Then: `.\ratchet.exe --selftest` · `.\ratchet.exe --golden` · `.\ratchet.exe <params> --json`.
 

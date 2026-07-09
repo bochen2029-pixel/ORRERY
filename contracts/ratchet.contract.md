@@ -58,4 +58,5 @@ params: `ratchet.exe --p 0.2 --rho 0.5 --R 3 --trials 4000000 --tmax 500 --cap 2
 recorded: `goldens/ratchet/` (canonical-serialized declared JSON + blake2b hash + captured stdout). Hash domain = {seed, params, result, gates, verdict} (as `someone`, D-013).
 
 ## Change log
+- v1.0.1 — [BEHAVIOR-NEUTRAL, D-020] internal: envelope/RNG/CLI spine migrated to `lib/` (liborrery); no flag, field, gate, or exit-code change; golden `91fce3c4` reproduced bit-identical 3× post-migration (PATCH per semver rules — a reproducing rewrite).
 - v1.0.0 — initial contract. GPU Monte-Carlo of the Galton-Watson branching ratchet; single-point verification of P[unwrite]=q\*^R (which embeds the (1−p)ρ=p threshold). Copies `someone`'s envelope/determinism/golden discipline. Planned MINOR (v1.1.0): an optional `--scan-rho` mode that sweeps ρ across the threshold and locates the empirical critical ρ_c vs p/(1−p) (an additive field + CSV curve).

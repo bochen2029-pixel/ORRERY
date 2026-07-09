@@ -18,3 +18,6 @@ Files: `declared.hash` (blake2b-256 of the canonical declared object), `stdout.t
 
 ## Environment
 Recorded in `runs/ratchet_golden.result.lock` (tool semver, binary blake2b, sm_89 + device, CUDA 13.1, host compiler, exact CLI, declared hash, git commit).
+
+## Migration record
+- 2026-07-09 · tool v1.0.1 (liborrery migration, D-020): declared hash **unchanged** `91fce3c4…` (reproduced bit-identical 3×). The envelope's non-hashed `version` field now prints `1.0.1`; `stdout.txt` remains the v1.0.0 freeze-time capture (the gate is `declared.hash`, D-013).
