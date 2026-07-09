@@ -25,8 +25,11 @@ C++20 on liborrery (first NEW lib consumer), no threads. File-spool serializer: 
 ## `/lab` PAGE BUILT (local; NOT deployed) — **PHASE 5 IS COMPLETE (2026-07-09)**
 `_build_lab.py` in `C:\Websites\finaltheoryofeverything.org\` renders `_upload/lab.html` from the **live registry via the mcp surface** (the website is a caller, like the science — no ORRERY internals read) + the repo's two-pass verdict artifacts; skin = the frozen v4 backup (idempotent, the v5 builder pattern). Structural battery ALL PASS: 8 tools, 8/8 two-pass CONFORMANT, all golden hashes live-matched, firewall verbatim, the someone n=24 TIE presented as the honest overturn it is. Serves at `/lab` with zero worker changes. **Deploy (`npx wrangler deploy`) is a human act — publish stays OPERATOR-GATED.** Site canon updated (BUILD_LOG.md; that folder is not git). Follow-up noted there: a /lab footer link on the essay at the next v-build.
 
+## PUBLISHED 2026-07-09 (explicit operator instruction: "ok publish it all")
+**Repo PUBLIC + current:** https://github.com/bochen2029-pixel/ORRERY (was already public at the 6-tool state; Wave-0 arc `43d7613..705b857` pushed after a benign-confirmed secrets sweep). **`/lab` LIVE:** https://finaltheoryofeverything.org/lab (wrangler `b5f78510`; verified live — 200, title, 8x CONFORMANT, all eight golden hashes, essay untouched). Standing rule update: the publish gate is SPENT — pushes at save points are now routine sync; creating NEW public artifacts (new repos, new pages) still asks first.
+
 ## Next concrete action
-**Wave 1 opens: `hsmi-stab` first** (the F-K1 falsifier — finite-D half-sided-modular-inclusion rigidity, graceful-vs-snap δ(ε)) in a **fresh full-budget session**: adopt its D-026 pre-contract in the opening commit; oracle = exact small-D brute force (D=2,3) + a non-hsm negative control; full build loop + cold two-pass + science-handback memo (the someone S5 pattern). Side candidates: `someone`'s owed fp64 CPU oracle (I-11/D-025); **publish** (OPERATOR-GATED: `git push` + public repo + `npx wrangler deploy` of the built /lab page are all human acts).
+**Wave 1 opens: `hsmi-stab` first** (the F-K1 falsifier — finite-D half-sided-modular-inclusion rigidity, graceful-vs-snap δ(ε)) in a **fresh full-budget session**: adopt its D-026 pre-contract in the opening commit; oracle = exact small-D brute force (D=2,3) + a non-hsm negative control; full build loop + cold two-pass + science-handback memo (the someone S5 pattern). Side candidate: `someone`'s owed fp64 CPU oracle (I-11/D-025). Publish is DONE (see above); save-point pushes are routine now.
 
 ## Guards (never violate)
 - Contracts and goldens are FROZEN; migrations are [BEHAVIOR-NEUTRAL] by definition or they are rejected.
@@ -36,4 +39,4 @@ C++20 on liborrery (first NEW lib consumer), no threads. File-spool serializer: 
 - Atomic commits: code + canon together (Invariant 10).
 
 ## Pointers
-Spec: ARCHITECTURE.md (§5 invariants now 1–14; §8 has the I-11 oracle column) · Plan: TASKLIST.md (Phase 5 = current) · Decisions: DECISIONS.md (D-020/D-021 newest) · Wave plan: docs/PROPOSAL_2026-07-09_wave_plan.md · Lib: lib/MODULE.md · Runbook: BUILD.md · Harness: harness/verify.py (tools only; lib selftest runs standalone from repo root).
+Spec: ARCHITECTURE.md (§5 invariants 1–14; §8 has the I-11 oracle column) · Plan: TASKLIST.md (Phases 4+5 COMPLETE; Phase 6 / Wave 1 next) · Decisions: DECISIONS.md (D-022 newest) · Wave plan: docs/PROPOSAL_2026-07-09_wave_plan.md · Lib: lib/MODULE.md · Runbook: BUILD.md · Harness: harness/verify.py (tools only; lib selftest runs standalone from repo root) · Public: github.com/bochen2029-pixel/ORRERY + finaltheoryofeverything.org/lab.
