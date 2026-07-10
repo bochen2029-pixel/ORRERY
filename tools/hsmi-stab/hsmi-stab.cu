@@ -377,8 +377,10 @@ static double fock_oracle_max_err(double* out_energy_err){
         for(int i=0;i<dimA;i++) for(int j=0;j<dimA;j++){ cd acc(0,0);
             for(int a=0;a<dimA;a++) acc += rV[(size_t)a*dimA+i]*yt[(size_t)a*dimA+j]; xt[(size_t)i*dimA+j]=acc; }
         std::vector<cd> xt2((size_t)dimA*dimA);
+        // back-rotation is x_t = V yt V^T: the right factor is V^T (buffer index a*dimA+j),
+        // unlike the forward y = (V^T c1) V step above whose right factor is V (j*dimA+a)
         for(int i=0;i<dimA;i++) for(int j=0;j<dimA;j++){ cd acc(0,0);
-            for(int a=0;a<dimA;a++) acc += xt[(size_t)i*dimA+a]*rV[(size_t)j*dimA+a]; xt2[(size_t)i*dimA+j]=acc; }
+            for(int a=0;a<dimA;a++) acc += xt[(size_t)i*dimA+a]*rV[(size_t)a*dimA+j]; xt2[(size_t)i*dimA+j]=acc; }
         // distance from complex span{c1,c2} in HS inner product
         cd p1(0,0), p2(0,0); double nn=nrm*nrm;
         for(size_t k=0;k<xt2.size();k++){ p1 += c1[k]*xt2[k]; p2 += c2[k]*xt2[k]; }
@@ -406,6 +408,8 @@ static double fock_oracle_max_err(double* out_energy_err){
           vg_m = std::sqrt(a1r*a1r+a1i*a1i);
         }
         double err = std::min(std::fabs(viol_fock - vg_p), std::fabs(viol_fock - vg_m));
+        fprintf(stderr,"  [oracle] t=%+.2f  fock=%.12f  gauss(+)=%.12f  gauss(-)=%.12f  err=%.3e\n",
+                t, viol_fock, vg_p, vg_m, err);
         maxerr = std::max(maxerr, err);
     }
     return maxerr;
