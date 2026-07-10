@@ -60,6 +60,133 @@ static void dsyevd_host(int N, std::vector<double>& A, std::vector<double>& w){
     cudaFree(dA); cudaFree(dW); cudaFree(work); cudaFree(info);
 }
 
+// complex Hermitian NxN, buffer COL-MAJOR (element (r,c) at c*N+r) -> eigenvalues w (ascending)
+// + eigenvectors in the buffer's columns. NOTE: a row-major-filled Hermitian buffer would hand
+// cuSOLVER the transpose = the CONJUGATE matrix (opposite chirality); fill col-major.
+static void zheevd_host(int N, std::vector<cd>& A, std::vector<double>& w){
+    ensure_solver();
+    cuDoubleComplex *dA=nullptr; double *dW=nullptr; int lwork=0,*info=nullptr;
+    CUDA_OK(cudaMalloc(&dA,(size_t)N*N*sizeof(cuDoubleComplex)));
+    CUDA_OK(cudaMalloc(&dW,(size_t)N*sizeof(double)));
+    CUDA_OK(cudaMemcpy(dA,A.data(),(size_t)N*N*sizeof(cuDoubleComplex),cudaMemcpyHostToDevice));
+    SOLVER_OK(cusolverDnZheevd_bufferSize(g_solver,CUSOLVER_EIG_MODE_VECTOR,CUBLAS_FILL_MODE_LOWER,N,dA,N,dW,&lwork));
+    cuDoubleComplex* work=nullptr; CUDA_OK(cudaMalloc(&work,(size_t)lwork*sizeof(cuDoubleComplex))); CUDA_OK(cudaMalloc(&info,sizeof(int)));
+    SOLVER_OK(cusolverDnZheevd(g_solver,CUSOLVER_EIG_MODE_VECTOR,CUBLAS_FILL_MODE_LOWER,N,dA,N,dW,work,lwork,info));
+    int hinfo=0; CUDA_OK(cudaMemcpy(&hinfo,info,sizeof(int),cudaMemcpyDeviceToHost));
+    if(hinfo!=0){ fprintf(stderr,"cuSOLVER zheevd info=%d\n",hinfo); std::exit(2); }
+    w.resize(N);
+    CUDA_OK(cudaMemcpy(A.data(),dA,(size_t)N*N*sizeof(cuDoubleComplex),cudaMemcpyDeviceToHost));
+    CUDA_OK(cudaMemcpy(w.data(),dW,(size_t)N*sizeof(double),cudaMemcpyDeviceToHost));
+    cudaFree(dA); cudaFree(dW); cudaFree(work); cudaFree(info);
+}
+
+// ------------------------------------------------------------------ v1.1 model candidate: chiral log-lattice kernel
+// Chiral-fermion vacuum two-point kernel <psi^dag(x)psi(y)> = (1/2pi i)/((y-x)-i0), sampled on the
+// log lattice x_k = e^{ak} with cell weights w_k = a x_k. sqrt(w_i w_j)/(x_j-x_i) telescopes to
+// a/(2 sinh(a(j-i)/2)) -- the kernel is TOEPLITZ in j-i: log-translation = dilation, so the shifted
+// mode set IS the canonical half-sided candidate. Diagonal = 1/2 (the delta half; PV part odd).
+// Complex Hermitian (T broken) => U(-t) != conj(U(t)): the D-027 obstruction is lifted.
+static const double HS_PI = 3.14159265358979323846;
+static void build_chiral_CA(int m, double a, std::vector<cd>& C){   // col-major fill
+    C.assign((size_t)m*m, cd(0,0));
+    for(int j=0;j<m;j++) for(int i=0;i<m;i++){
+        if(i==j) C[(size_t)j*m+i] = cd(0.5, 0.0);
+        else     C[(size_t)j*m+i] = cd(0.0, -a/(4.0*HS_PI*std::sinh(a*(j-i)*0.5)));
+    }
+}
+struct ModularC { int n; std::vector<cd> W; std::vector<double> lam; double min_c, max_c; };
+static ModularC modular_of_c(std::vector<cd> CA, int n){            // CA col-major, consumed
+    ModularC M; M.n=n;
+    std::vector<double> w;
+    zheevd_host(n, CA, w);
+    M.W = CA; M.lam.resize(n); M.min_c=1e9; M.max_c=-1e9;
+    for(int i=0;i<n;i++){
+        double c = w[i];
+        M.min_c = std::min(M.min_c, c); M.max_c = std::max(M.max_c, c);
+        c = std::min(std::max(c, CLAMP_G), 1.0-CLAMP_G);
+        M.lam[i] = std::log((1.0-c)/c);
+    }
+    return M;
+}
+// U(t) = W diag(e^{i lam t}) W^dagger; leakage block B[r][c] = <e_r|U(t)|e_{s+c}>
+// = sum_i W[r,i] e^{i lam_i t} conj(W[s+c,i]); sigma_max via the s x s Gram (complex Hermitian).
+static double viol_at_c(const ModularC& M, double t, int s){
+    int n=M.n, m=n-s;
+    std::vector<cd> B((size_t)s*m, cd(0,0));
+    for(int i=0;i<n;i++){
+        cd ph = std::polar(1.0, M.lam[i]*t);
+        for(int r=0;r<s;r++){
+            cd f = M.W[(size_t)i*n+r] * ph;
+            if(f==cd(0,0)) continue;
+            for(int c=0;c<m;c++) B[(size_t)r*m+c] += f * std::conj(M.W[(size_t)i*n+(s+c)]);
+        }
+    }
+    if(s==1){ double acc=0; for(int c=0;c<m;c++) acc += std::norm(B[c]); return std::sqrt(acc); }
+    std::vector<cd> G((size_t)s*s, cd(0,0));                        // Gram of rows: B B^dagger (col-major fill; Hermitian)
+    for(int r2=0;r2<s;r2++) for(int r1=0;r1<s;r1++){
+        cd acc(0,0);
+        for(int c=0;c<m;c++) acc += B[(size_t)r1*m+c]*std::conj(B[(size_t)r2*m+c]);
+        G[(size_t)r2*s+r1] = acc;
+    }
+    std::vector<double> wg; zheevd_host(s, G, wg);
+    return std::sqrt(std::max(0.0, wg[s-1]));
+}
+
+// chiral state on a uniform periodic chain by momentum projection: occupy the right-movers
+// k_q = 2 pi q / L, q = 1..L/2-1 (group velocity sin k > 0; k=0,pi excluded). C is a spectral
+// projector => window restriction has eigenvalues in [0,1] by construction. Complex Hermitian.
+static void build_chiral_window(int L, int n, std::vector<cd>& CA){   // col-major
+    CA.assign((size_t)n*n, cd(0,0));
+    for(int j=0;j<n;j++) for(int i=0;i<n;i++){
+        cd acc(0,0);
+        for(int q=1;q<=L/2-1;q++){
+            double ph = 2.0*HS_PI*q*(double)(i-j)/(double)L;
+            acc += cd(std::cos(ph), std::sin(ph));
+        }
+        CA[(size_t)j*n+i] = acc/(double)L;
+    }
+}
+// K = W diag(lam) W^dagger from modular eigendata (col-major, Hermitian)
+static void kmat_from(const ModularC& M, std::vector<cd>& K){
+    int n=M.n; K.assign((size_t)n*n, cd(0,0));
+    for(int i=0;i<n;i++) for(int r=0;r<n;r++){
+        cd wl = M.W[(size_t)i*n+r]*M.lam[i];
+        for(int c=0;c<n;c++) K[(size_t)c*n+r] += wl*std::conj(M.W[(size_t)i*n+c]);
+    }
+}
+struct GParts { double negsum, possum, mineig, maxeig; int nneg; };
+static GParts g_parts(std::vector<cd>& G, int n){                     // consumes G
+    std::vector<double> w; zheevd_host(n, G, w);
+    GParts P{0,0,w[0],w[n-1],0};
+    for(int i=0;i<n;i++){ if(w[i]<0){ P.negsum -= w[i]; P.nneg++; } else P.possum += w[i]; }
+    return P;
+}
+// Borchers-generator probe for a window covariance CA (col-major n x n), sub-window = drop first s
+static void probe_G_of(const char* tag, const std::vector<cd>& CA, int n, int s){
+    ModularC MA = modular_of_c(CA, n);
+    std::vector<cd> KA; kmat_from(MA, KA);
+    int m = n - s;
+    std::vector<cd> CN((size_t)m*m);
+    for(int c=0;c<m;c++) for(int r=0;r<m;r++) CN[(size_t)c*m+r] = CA[(size_t)(s+c)*n+(s+r)];
+    ModularC MN = modular_of_c(CN, m);
+    std::vector<cd> KN; kmat_from(MN, KN);
+    const double TP = 2.0*HS_PI;
+    std::vector<cd> Gf((size_t)n*n), Gr((size_t)m*m);                 // full (KN embedded) and N-restricted
+    for(int c=0;c<n;c++) for(int r=0;r<n;r++){
+        cd kn = (r>=s && c>=s) ? KN[(size_t)(c-s)*m+(r-s)] : cd(0,0);
+        Gf[(size_t)c*n+r] = (KA[(size_t)c*n+r] - kn)/TP;
+    }
+    for(int c=0;c<m;c++) for(int r=0;r<m;r++)
+        Gr[(size_t)c*m+r] = (KA[(size_t)(s+c)*n+(s+r)] - KN[(size_t)c*m+r])/TP;
+    GParts pf = g_parts(Gf, n), pr = g_parts(Gr, m);
+    fprintf(stderr,"%s n=%3d s=%d  minmarg=%.1e | G_full: min=%+.4f negsum=%.4f possum=%.4f nneg=%d"
+                   " | G_restr: min=%+.4f negsum=%.4f possum=%.4f nneg=%d arrow=%.2f\n",
+            tag, n, s, std::min(MA.min_c, 1.0-MA.max_c),
+            pf.mineig, pf.negsum, pf.possum, pf.nneg,
+            pr.mineig, pr.negsum, pr.possum, pr.nneg,
+            pr.negsum>0 ? pr.possum/pr.negsum : 1e12);
+}
+
 // ------------------------------------------------------------------ params / result
 struct Params {
     int sites=128, shift=1, eps_points=8, t_points=64;
@@ -494,6 +621,169 @@ int main(int argc,char** argv){
     }
     if(P.selftest) return run_selftest();
     if(P.golden)   return run_golden();
+    if(getenv("HSMI_PROBE") && atoi(getenv("HSMI_PROBE"))==6){   // v1.1 FUNCTIONAL probe: many-body Borchers positivity
+        // Wiesbrock criterion verbatim: hsm <=> K_A - K_N = 2 pi P >= 0 (MANY-BODY, constants included).
+        // minspec(K_A - K_N) = c0 + sum_{mu<0} mu, with mu = eig(k_A - k_N(+)0) and
+        // c0 = sum_A log(1+e^{-lam}) - sum_N log(1+e^{-lam}) (the -log Z normalizations).
+        auto run6 = [&](const char* tag, const std::vector<cd>& CA, int n, int s){
+            ModularC MA = modular_of_c(CA, n);
+            std::vector<cd> KA; kmat_from(MA, KA);
+            int m2=n-s;
+            std::vector<cd> CN((size_t)m2*m2);
+            for(int c=0;c<m2;c++) for(int r=0;r<m2;r++) CN[(size_t)c*m2+r] = CA[(size_t)(s+c)*n+(s+r)];
+            ModularC MN = modular_of_c(CN, m2);
+            std::vector<cd> KNs; kmat_from(MN, KNs);
+            std::vector<cd> B((size_t)n*n);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++){
+                cd kn = (r>=s&&c>=s)? KNs[(size_t)(c-s)*m2+(r-s)] : cd(0,0);
+                B[(size_t)c*n+r] = KA[(size_t)c*n+r] - kn;
+            }
+            std::vector<double> mu; zheevd_host(n, B, mu);
+            double negs=0, poss=0; for(int i=0;i<n;i++){ if(mu[i]<0) negs+=mu[i]; else poss+=mu[i]; }
+            double c0=0;
+            for(int i=0;i<n;i++)  c0 += std::log(1.0+std::exp(-MA.lam[i]));
+            for(int j=0;j<m2;j++) c0 -= std::log(1.0+std::exp(-MN.lam[j]));
+            double msp = c0 + negs;                                  // minspec(K_A - K_N)
+            double msm = -c0 - poss;                                 // minspec(K_N - K_A)
+            fprintf(stderr,"%s n=%3d s=%d  c0=%+.4f negs=%+.4f poss=%+.4f | minspec(KA-KN)=%+.4f minspec(KN-KA)=%+.4f ratio=%.2f\n",
+                    tag, n, s, c0, negs, poss, msp, msm,
+                    std::min(std::fabs(msp),std::fabs(msm))>1e-12 ? std::max(std::fabs(msp),std::fabs(msm))/std::min(std::fabs(msp),std::fabs(msm)) : 1e12);
+        };
+        for(int n : {16, 32, 64, 128}){ std::vector<cd> CA; build_chiral_window(4*n, n, CA); run6("chiral", CA, n, 1); }
+        for(int n : {16, 32, 64, 128}){
+            int L=2*n; std::vector<double> h,C; build_h(h,L,0,0.0,0); ground_cov(h,L,C);
+            std::vector<cd> CA((size_t)n*n);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++) CA[(size_t)c*n+r] = cd(C[(size_t)(n+r)*L+(n+c)],0.0);
+            run6("t-inv ", CA, n, 1);
+        }
+        return 0;
+    }
+    if(getenv("HSMI_PROBE") && atoi(getenv("HSMI_PROBE"))==5){   // v1.1 FUNCTIONAL probe: directional transport element
+        // |<e_0|U(t)|e_1>|: mode-referenced (NOT unitarily invariant) => no blindness identity applies.
+        // The modular flow's transport from the boundary N-mode into the dropped mode, per direction.
+        auto run5 = [&](const char* tag, const std::vector<cd>& CA, int n){
+            ModularC M = modular_of_c(CA, n);
+            fprintf(stderr,"%s n=%3d  t:", tag, n);
+            double dp=0, dm=0;
+            for(double t : {0.05,0.1,0.2,0.4,0.8,1.6,3.2}){
+                cd ap(0,0), am(0,0);
+                for(int i=0;i<n;i++){
+                    cd w0 = M.W[(size_t)i*n+0], w1c = std::conj(M.W[(size_t)i*n+1]);
+                    ap += w0*std::polar(1.0, M.lam[i]*t)*w1c;
+                    am += w0*std::polar(1.0,-M.lam[i]*t)*w1c;
+                }
+                dp=std::max(dp,std::abs(ap)); dm=std::max(dm,std::abs(am));
+                fprintf(stderr," [%.2f %+.4f/%+.4f]", t, std::abs(ap), std::abs(am));
+            }
+            fprintf(stderr,"\n%s n=%3d  max+=%.6f max-=%.6f asym=%.4f\n", tag, n, dp, dm,
+                    std::max(dp,dm)/std::max(1e-300,std::min(dp,dm)));
+        };
+        for(int n : {32, 128}){ std::vector<cd> CA; build_chiral_window(4*n, n, CA); run5("chiral", CA, n); }
+        for(int n : {32, 128}){
+            int L=2*n; std::vector<double> h,C; build_h(h,L,0,0.0,0); ground_cov(h,L,C);
+            std::vector<cd> CA((size_t)n*n);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++) CA[(size_t)c*n+r] = cd(C[(size_t)(n+r)*L+(n+c)],0.0);
+            run5("t-inv ", CA, n);
+        }
+        return 0;
+    }
+    if(getenv("HSMI_PROBE") && atoi(getenv("HSMI_PROBE"))==4){   // v1.1 FUNCTIONAL probe: ax+b commutator witness
+        // true +/-hsm: [K_A, K_N] = -/+ 2 pi i (K_N - K_A). Constants drop out of commutators;
+        // orientation IS the sign. J-conjugation maps R+ <-> R- for a REAL k (T-invariant control).
+        auto run = [&](const char* tag, const std::vector<cd>& CA, int n, int s){
+            ModularC MA = modular_of_c(CA, n);
+            std::vector<cd> KA; kmat_from(MA, KA);
+            int m2 = n - s;
+            std::vector<cd> CN((size_t)m2*m2);
+            for(int c=0;c<m2;c++) for(int r=0;r<m2;r++) CN[(size_t)c*m2+r] = CA[(size_t)(s+c)*n+(s+r)];
+            ModularC MN = modular_of_c(CN, m2);
+            std::vector<cd> KNs; kmat_from(MN, KNs);
+            std::vector<cd> KN((size_t)n*n, cd(0,0));                 // embed k_N (+0 on the dropped modes)
+            for(int c=0;c<m2;c++) for(int r=0;r<m2;r++) KN[(size_t)(s+c)*n+(s+r)] = KNs[(size_t)c*m2+r];
+            std::vector<cd> Cm((size_t)n*n, cd(0,0)), D((size_t)n*n); // Cm=[KA,KN], D=KN-KA
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++){
+                cd acc(0,0);
+                for(int a2=0;a2<n;a2++)
+                    acc += KA[(size_t)a2*n+r]*KN[(size_t)c*n+a2] - KN[(size_t)a2*n+r]*KA[(size_t)c*n+a2];
+                Cm[(size_t)c*n+r]=acc;
+                D[(size_t)c*n+r]=KN[(size_t)c*n+r]-KA[(size_t)c*n+r];
+            }
+            const double TP=2.0*HS_PI;
+            double np=0, nm=0, ncm=0, nd=0;
+            for(size_t k2=0;k2<Cm.size();k2++){
+                cd rp = Cm[k2] - cd(0,TP)*D[k2];                      // R+ = [KA,KN] - 2 pi i (KN-KA)
+                cd rm = Cm[k2] + cd(0,TP)*D[k2];
+                np += std::norm(rp); nm += std::norm(rm); ncm += std::norm(Cm[k2]); nd += std::norm(D[k2]);
+            }
+            np=std::sqrt(np); nm=std::sqrt(nm); ncm=std::sqrt(ncm); nd=TP*std::sqrt(nd);
+            // Frobenius is provably blind (tr(Cm D)=0 by cyclicity) -- print it as the identity check;
+            // the discriminator is the SPECTRUM of the Hermitian pair H+- = i[KA,KN] +- 2pi(KN-KA)
+            // (for a true -/+hsm one of them is EXACTLY zero; only even moments are forced equal).
+            std::vector<cd> Hp((size_t)n*n), Hm((size_t)n*n);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++){
+                cd ic = cd(0,1)*Cm[(size_t)c*n+r];
+                Hp[(size_t)c*n+r] = ic + cd(TP,0)*D[(size_t)c*n+r];
+                Hm[(size_t)c*n+r] = ic - cd(TP,0)*D[(size_t)c*n+r];
+            }
+            std::vector<double> wp, wm;
+            zheevd_host(n, Hp, wp); zheevd_host(n, Hm, wm);
+            double op_p = std::max(std::fabs(wp[0]), std::fabs(wp[n-1]));
+            double op_m = std::max(std::fabs(wm[0]), std::fabs(wm[n-1]));
+            double t3p=0, t3m=0; for(int i2=0;i2<n;i2++){ t3p += wp[i2]*wp[i2]*wp[i2]; t3m += wm[i2]*wm[i2]*wm[i2]; }
+            fprintf(stderr,"%s n=%3d s=%d  frob: |R+|=%.4f |R-|=%.4f ratio=%.4f | op: |H+|=%.4f |H-|=%.4f ratio=%.4f"
+                           " | tr(H^3): +%.3e / %.3e  (|[.,.]|=%.3f 2pi|D|=%.3f)\n",
+                    tag, n, s, np, nm, std::max(np,nm)/std::min(np,nm),
+                    op_p, op_m, std::max(op_p,op_m)/std::min(op_p,op_m),
+                    t3p, t3m, ncm, nd);
+        };
+        for(int n : {16, 32, 64, 128}){ std::vector<cd> CA; build_chiral_window(4*n, n, CA); run("chiral", CA, n, 1); }
+        for(int n : {16, 32, 64, 128}){
+            int L=2*n; std::vector<double> h,C; build_h(h,L,0,0.0,0); ground_cov(h,L,C);
+            std::vector<cd> CA((size_t)n*n);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++) CA[(size_t)c*n+r] = cd(C[(size_t)(n+r)*L+(n+c)],0.0);
+            run("t-inv ", CA, n, 1);
+        }
+        return 0;
+    }
+    if(getenv("HSMI_PROBE") && atoi(getenv("HSMI_PROBE"))==3){   // v1.1 FUNCTIONAL probe: Borchers generator G
+        // G = (k_window - k_subwindow)/2pi; true hsm <=> G >= 0 (Wiesbrock). delta_minus ~ negative part.
+        for(int n : {16, 32, 64, 128}){
+            std::vector<cd> CA; build_chiral_window(4*n, n, CA);
+            probe_G_of("chiral", CA, n, 1);
+        }
+        for(int n : {16, 32, 64, 128}){                          // T-invariant control: expect negsum==possum
+            int L=2*n; std::vector<double> h,C; build_h(h,L,0,0.0,0); ground_cov(h,L,C);
+            std::vector<cd> CA((size_t)n*n);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++) CA[(size_t)c*n+r] = cd(C[(size_t)(n+r)*L+(n+c)],0.0);
+            probe_G_of("t-inv ", CA, n, 1);
+        }
+        for(int n : {32, 64}){                                   // shift=2 on the chiral model
+            std::vector<cd> CA; build_chiral_window(4*n, n, CA);
+            probe_G_of("chir-2", CA, n, 2);
+        }
+        return 0;
+    }
+    if(getenv("HSMI_PROBE") && atoi(getenv("HSMI_PROBE"))==2){   // v1.1 model probe: chiral log-lattice
+        for(double a : {0.25, 0.5, 1.0}){
+            for(int m : {32, 64, 128, 256}){
+                std::vector<cd> C; build_chiral_CA(m, a, C);
+                ModularC M = modular_of_c(C, m);
+                double spill = std::max(-(M.min_c), M.max_c - 1.0);
+                fprintf(stderr,"a=%.2f m=%3d  min_c=%+.3e  1-max_c=%+.3e  spill=%+.3e\n   t: ",
+                        a, m, M.min_c, 1.0-M.max_c, spill);
+                double dp=0,dm=0;
+                for(double t : {0.05,0.1,0.2,0.4,0.8,1.6,3.2,6.4,12.8}){
+                    double vp=viol_at_c(M,+t,1), vm=viol_at_c(M,-t,1);
+                    dp=std::max(dp,vp); dm=std::max(dm,vm);
+                    fprintf(stderr,"[%.2f +%.4f -%.4f] ", t, vp, vm);
+                }
+                fprintf(stderr,"\n   dplus=%.6f dminus=%.6f arrow=%.2f\n",
+                        std::max(dp,dm), std::min(dp,dm),
+                        std::min(dp,dm)>0 ? std::max(dp,dm)/std::min(dp,dm) : 1e12);
+            }
+        }
+        return 0;
+    }
     if(getenv("HSMI_PROBE")){                      // TEMPORARY build-session probe (not in the contract)
         for(int n : {32, 64, 128}){
             Params Q; Q.sites=n; Q.shift=1; Q.t_points=2; Q.seed=0; Q.seed_set=true;
