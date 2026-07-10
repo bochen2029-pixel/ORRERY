@@ -1,4 +1,7 @@
-# hsmi-stab — Contract  v1.0.0
+# hsmi-stab — Contract  v1.0.0 — **MODEL RETURNED TO DRAFT (2026-07-10; no golden was ever frozen, no caller exists — revision is safe per the D-009 precedent)**
+
+> **D-027:** the v1.0.0 model section below is **structurally blind to the arrow it must measure** — for a real (time-reversal-invariant) Hamiltonian, `U(−t) = conj(U(t))`, so the site-basis leak norm is *provably identical* in both flow directions (measured: symmetric to 4+ decimals at every t and n). Half-sidedness is a chirality phenomenon; the proxy must break T. The v1.1.0 draft (next session) replaces the model with a **chirality-broken standard pair** — leading candidate: the chiral-fermion vacuum kernel sampled on a **logarithmic lattice** (where dilation = lattice shift; covariance becomes complex Hermitian; positivity spill must be checked against the declared clamp). Everything else in this contract — the δ± functional shape, deformation families, pre-registered gates, the Fock-oracle requirement, the Type-I scope guard — carries forward. Do not freeze any golden against the v1.0.0 model.
+
 
 ## Purpose
 The **K1 probe** (F-K1, "first by dignity"; essay v5 Problem P1): given a finite-dimensional proxy of a standard half-sided modular inclusion, measure the **half-sidedness violation** δ±(state) and its growth **δ₋(ε)** as the state is deformed off the symmetric locus — verdict **graceful vs snap**. Rigidity (snap) is the theory's own internal falsifier: "half-sided modular position exists only exactly at maximal symmetry" would kill the construction with no experiment required.

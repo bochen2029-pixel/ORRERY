@@ -2,7 +2,11 @@
 
 *Wave-1 tool #1 — the K1 probe (F-K1, "first by dignity"). Read `contracts/hsmi-stab.contract.md` (v1.0.0) first — the contract is authoritative. This MODULE carries the full math spec so a cold session implements against it with zero re-derivation.*
 
-**Status: CONTRACT FROZEN (v1.0.0, 2026-07-10); implementation opens against it.** Update this line as the build loop advances (implement → selftest → golden 3× → harness → cold two-pass).
+**Status: MODEL RETURNED TO DRAFT (D-027, 2026-07-10).** The walking skeleton is built and its infrastructure battery is green (blake2b KAT · covariance projector · many-body ground-energy cross-check 1e−9 · negative control · determinism both families), but the session's probe PROVED the v1.0.0 model arrow-blind (violation exactly ±t-symmetric: `U(−t)=conj(U(t))` for T-invariant states — see D-027 and the contract banner). **No golden exists; do not freeze one against this model.** The temporary probe stays in the code (env `HSMI_PROBE=1`) — it is the diagnostic that caught the blindness.
+
+**NEXT SESSION, in order:** (1) print the Fock-vs-Gaussian oracle numbers (the check still fails post-fix; magnitude unknown; suspects: the region-internal JW / global-mode parity twist, or the comparator's index/conjugation) and fix; (2) design the chirality-broken model (log-lattice chiral vacuum sampling — verify covariance positivity; alternatives in D-027); (3) re-derive the t-scale empirically with the probe (the arrow lives at small dilations only); (4) amend this MODULE's math section + the contract to v1.1.0; (5) only then: golden 3× → harness → cold two-pass.
+
+**Probe data (2026-07-10, the arrow-blindness measurement):** viol(+t)=viol(−t) to 4+ decimals at every point; e.g. n=128: t=0.05→0.1558 · 0.1→0.3042 · 0.2→0.5569 · 0.4→0.8501 · 0.8→0.9870 · 1.6→0.9984 · 3.2→0.9808 · 6.28→0.9945 (both signs identical). Also note the t-scale: leakage is O(1) by t≈0.4 even ignoring symmetry — the eventual v1.1 t_max default must be ≪ 6.28.
 
 ## Purpose
 Measure the finite-D **half-sidedness violation** δ± of a standard-pair proxy and its deformation scaling δ₋(ε): the finite-dimensional projection of essay-v5 **Problem P1** — *is half-sided modular position structurally stable under deformation of the state?* Snap ⇒ **G-RIGID** fires ⇒ the theory's own falsifier F-K1 fires (exit 1: a real result, the loudest one this instrument can produce).
