@@ -33,7 +33,7 @@ D-026 adopted Active (per-tool opening protocol). Contract v1.0.0 + schema + MOD
 
 ## Next concrete action
 **hsmi-stab v1.1.0-draft, fresh session, in this order:** (1) print the Fock/Gaussian oracle numbers, find + fix the residual (suspects: region-JW/global-mode parity twist; comparator conjugation/indexing); (2) design the chirality-broken standard pair (leading: chiral vacuum kernel on a LOG lattice — dilation = shift; verify 0≤C≤1 spill vs the clamp; alternatives in D-027); (3) probe the t-scale empirically (arrow lives at small dilations; old default 6.28 is e^{39} — absurd); (4) contract+MODULE → v1.1.0; (5) golden 3× → harness → cold two-pass → science-handback. Then `trace-born`, `carve`.
-**Wave 1 opens: `hsmi-stab` first** (the F-K1 falsifier — finite-D half-sided-modular-inclusion rigidity, graceful-vs-snap δ(ε)) in a **fresh full-budget session**: adopt its D-026 pre-contract in the opening commit; oracle = exact small-D brute force (D=2,3) + a non-hsm negative control; full build loop + cold two-pass + science-handback memo (the someone S5 pattern). Side candidate: `someone`'s owed fp64 CPU oracle (I-11/D-025). Publish is DONE (see above); save-point pushes are routine now.
+Side candidate when convenient: `someone`'s owed fp64 CPU oracle (I-11/D-025). Publish is DONE; save-point pushes are routine.
 
 ## Guards (never violate)
 - Contracts and goldens are FROZEN; migrations are [BEHAVIOR-NEUTRAL] by definition or they are rejected.
