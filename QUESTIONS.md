@@ -7,7 +7,10 @@ operator must rule on. Newest first.
 
 ## Q-002 · hsmi-stab: both Q-001 witness iterations are measured negatives — continue, hand back, or pivot? (2026-07-10)
 
-**Status: OPEN.**
+**Status: RULED (operator, 2026-07-10) — option (ii), science-handback.** The memo is
+`runs/hsmi-stab_k1_witness_handback.md` (claim-by-claim, with the reformulation asks and the full
+reproduction provenance). hsmi-stab is PARKED pending the science's reformulation of F-K1's
+finite-D projection; the contract stays under its DRAFT banner; no golden exists.
 
 **The situation** (probes `HSMI_PROBE=8/9`; data in MODULE.md): the two iterations of the ruled-in
 index/winding direction are both negative, on machinery whose controls behave exactly as their
