@@ -621,6 +621,54 @@ int main(int argc,char** argv){
     }
     if(P.selftest) return run_selftest();
     if(P.golden)   return run_golden();
+    if(getenv("HSMI_PROBE") && atoi(getenv("HSMI_PROBE"))==7){   // v1.1 WITNESS probe (Q-001 ruling): winding/index
+        // M(t) = P_N U(t) P_N; bulk symbol phi(theta) = sum_d M[j0][j0+d] e^{i d theta} from the
+        // center row; winding(phi) = the finite shadow of the Fredholm index of the half-infinite
+        // compression; gap = min|phi|. T-invariant k (real symmetric) => U complex-symmetric =>
+        // phi(theta)=phi(-theta) => winding == 0 BY T-INVARIANCE. Sign of winding = the arrow.
+        auto run7 = [&](const char* tag, const std::vector<cd>& CA, int n, int s, double t){
+            ModularC M = modular_of_c(CA, n);
+            int m2 = n - s;
+            // U(t) block [s..,s..]: U_{xy} = sum_i W[x,i] e^{i lam_i t} conj(W[y,i])
+            std::vector<cd> Ub((size_t)m2*m2, cd(0,0));
+            for(int i=0;i<n;i++){
+                cd ph = std::polar(1.0, M.lam[i]*t);
+                for(int x=0;x<m2;x++){
+                    cd f = M.W[(size_t)i*n+(s+x)]*ph;
+                    if(f==cd(0,0)) continue;
+                    for(int y=0;y<m2;y++) Ub[(size_t)x*m2+y] += f*std::conj(M.W[(size_t)i*n+(s+y)]);
+                }
+            }
+            int j0 = m2/2, D = std::min(16, j0-1);
+            const int K = 512;
+            double wind = 0, gmin = 1e300, gmax = 0;
+            cd prev(0,0);
+            for(int k2=0;k2<=K;k2++){
+                double th = 2.0*HS_PI*k2/K;
+                cd ph2(0,0);
+                for(int d=-D; d<=D; d++)
+                    ph2 += Ub[(size_t)j0*m2 + (j0+d)] * std::polar(1.0, d*th);
+                gmin = std::min(gmin, std::abs(ph2)); gmax = std::max(gmax, std::abs(ph2));
+                if(k2>0){ double da = std::arg(ph2/prev); wind += da; }
+                prev = ph2;
+            }
+            wind /= 2.0*HS_PI;
+            fprintf(stderr,"%s n=%3d t=%+.4f  winding=%+.3f  gap=%.3e  max|phi|=%.3f%s\n",
+                    tag, n, t, wind, gmin, gmax, gmin<1e-6? "  [GAP~0: winding ill-defined]" : "");
+        };
+        for(int n : {32, 128}){
+            std::vector<cd> CA; build_chiral_window(4*n, n, CA);
+            for(double tt : {0.005, 0.01, 0.02, 0.05, 0.1, 0.2}){ run7("chiral", CA, n, 1, +tt); run7("chiral", CA, n, 1, -tt); }
+            fprintf(stderr,"\n");
+        }
+        for(int n : {32, 128}){
+            int L=2*n; std::vector<double> h,C; build_h(h,L,0,0.0,0); ground_cov(h,L,C);
+            std::vector<cd> CA((size_t)n*n);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++) CA[(size_t)c*n+r] = cd(C[(size_t)(n+r)*L+(n+c)],0.0);
+            for(double tt : {0.01, 0.05, 0.1, 0.2}){ run7("t-inv ", CA, n, 1, +tt); run7("t-inv ", CA, n, 1, -tt); }
+        }
+        return 0;
+    }
     if(getenv("HSMI_PROBE") && atoi(getenv("HSMI_PROBE"))==6){   // v1.1 FUNCTIONAL probe: many-body Borchers positivity
         // Wiesbrock criterion verbatim: hsm <=> K_A - K_N = 2 pi P >= 0 (MANY-BODY, constants included).
         // minspec(K_A - K_N) = c0 + sum_{mu<0} mu, with mu = eig(k_A - k_N(+)0) and

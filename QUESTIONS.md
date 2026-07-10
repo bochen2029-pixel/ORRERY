@@ -7,7 +7,15 @@ operator must rule on. Newest first.
 
 ## Q-001 · hsmi-stab: what is the finite-D witness of the half-sided arrow? (2026-07-10 — BLOCKS v1.1.0-draft)
 
-**Status: OPEN.**
+**Status: RULED (operator, 2026-07-10) — option (a): index/winding witness adopted as the primary
+target, (b) mode-referenced transport as the measured cross-check.** hsmi-stab v1.1.0-draft is
+UNBLOCKED in that direction. First implementation iteration (probe `HSMI_PROBE=7`, center-row
+site-basis symbol winding of the compression) measured NEGATIVE — chiral winding 0 in the clean-gap
+regime; the flow disperses in site space rather than translating at the probed scales; control
+winding appears only where the gap has collapsed (junk). Named next iterations (MODULE.md): read the
+winding in the rapidity / modular-ladder basis, and the Wiesbrock cocycle `V(t)=U_𝒩(t)U_𝒜(−t)`
+eigenphase flow (order-asymmetric under t→−t — no blindness identity applies; G≥0 ⟺ one-way phase
+flow). The pre-registration of exact thresholds happens at contract-amendment time, per D-026.
 
 **The situation** (full evidence: DECISIONS.md **D-028**; reproducible probes in
 `tools/hsmi-stab/hsmi-stab.cu`, `HSMI_PROBE=2..6`): the v1.0.0 leak-norm functional is
