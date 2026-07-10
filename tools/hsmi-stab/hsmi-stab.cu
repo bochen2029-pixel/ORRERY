@@ -187,6 +187,45 @@ static void probe_G_of(const char* tag, const std::vector<cd>& CA, int n, int s)
             pr.negsum>0 ? pr.possum/pr.negsum : 1e12);
 }
 
+// U(t) = W diag(e^{i lam_i t}) W^dagger from modular eigendata (col-major)
+static void umat_from(const ModularC& M, double t, std::vector<cd>& U){
+    int n=M.n; U.assign((size_t)n*n, cd(0,0));
+    for(int i=0;i<n;i++){
+        cd ph = std::polar(1.0, M.lam[i]*t);
+        for(int r=0;r<n;r++){
+            cd f = M.W[(size_t)i*n+r]*ph;
+            if(f==cd(0,0)) continue;
+            for(int c=0;c<n;c++) U[(size_t)c*n+r] += f*std::conj(M.W[(size_t)i*n+c]);
+        }
+    }
+}
+// eigenphases of a unitary (normal) V: diagonalize H_a = cos(a)(V+V^dag)/2 + sin(a)(V-V^dag)/2i
+// (shares the joint eigenbasis; generic a splits +-theta pairs), then theta_j = arg(v^dag V v).
+// r_j = |v^dag V v| ~ 1 certifies no degenerate-cluster mixing (probe-grade; shipped tool would
+// do the two-stage cluster solve).
+static void eigenphases(int n, const std::vector<cd>& V, std::vector<double>& th, double* minr,
+                        std::vector<cd>* evecs=nullptr){
+    const double AL = 0.3737;
+    std::vector<cd> H((size_t)n*n);
+    for(int c=0;c<n;c++) for(int r=0;r<n;r++){
+        cd v = V[(size_t)c*n+r], w = std::conj(V[(size_t)r*n+c]);
+        H[(size_t)c*n+r] = std::cos(AL)*0.5*(v+w) + std::sin(AL)*cd(0,-0.5)*(v-w);
+    }
+    std::vector<double> wv; zheevd_host(n, H, wv);
+    th.resize(n); if(minr)*minr=1e9;
+    for(int j=0;j<n;j++){
+        cd mu(0,0);
+        for(int r=0;r<n;r++){
+            cd acc(0,0);
+            for(int a=0;a<n;a++) acc += V[(size_t)a*n+r]*H[(size_t)j*n+a];
+            mu += std::conj(H[(size_t)j*n+r])*acc;
+        }
+        th[j] = std::arg(mu);
+        if(minr) *minr = std::min(*minr, std::abs(mu));
+    }
+    if(evecs) *evecs = H;
+}
+
 // ------------------------------------------------------------------ params / result
 struct Params {
     int sites=128, shift=1, eps_points=8, t_points=64;
@@ -621,6 +660,168 @@ int main(int argc,char** argv){
     }
     if(P.selftest) return run_selftest();
     if(P.golden)   return run_golden();
+    if(getenv("HSMI_PROBE") && (atoi(getenv("HSMI_PROBE"))==8 || atoi(getenv("HSMI_PROBE"))==9)){
+        // P8 (ladder diagnostic) + P9 (Wiesbrock cocycle eigenphase flow) — the Q-001 iterations.
+        // P9: V(t) = U_N(t) (+) out-phase  *  U_A(-t).  hsm => all eigenphases one-signed (G>=0).
+        // Controls: t-inv std MUST be exactly +-symmetric (staggering x conjugation maps V -> conj V
+        // unitarily: S k S = -k for both half-filled k's); random nested subspace guards against the
+        // P6 failure mode (generic-nesting one-sidedness).
+        int probe_id = atoi(getenv("HSMI_PROBE"));
+        auto subspace_std = [&](int n, int s, std::vector<cd>& Qm){   // columns e_s..e_{n-1}
+            int m2=n-s; Qm.assign((size_t)m2*n, cd(0,0));
+            for(int j=0;j<m2;j++) Qm[(size_t)j*n + (s+j)] = cd(1,0);
+        };
+        auto subspace_rand = [&](int n, int s, std::vector<cd>& Qm){  // seeded complex Gram-Schmidt
+            int m2=n-s; Qm.assign((size_t)m2*n, cd(0,0));
+            for(int j=0;j<m2;j++){
+                for(int x=0;x<n;x++)
+                    Qm[(size_t)j*n+x] = cd(counter_gauss(424242,(uint64_t)j,(uint64_t)x,20),
+                                           counter_gauss(424242,(uint64_t)j,(uint64_t)x,21));
+                for(int p=0;p<j;p++){ cd d(0,0);
+                    for(int x=0;x<n;x++) d += std::conj(Qm[(size_t)p*n+x])*Qm[(size_t)j*n+x];
+                    for(int x=0;x<n;x++) Qm[(size_t)j*n+x] -= d*Qm[(size_t)p*n+x]; }
+                double nn=0; for(int x=0;x<n;x++) nn += std::norm(Qm[(size_t)j*n+x]);
+                nn=std::sqrt(nn); for(int x=0;x<n;x++) Qm[(size_t)j*n+x] /= nn;
+            }
+        };
+        auto compress_C = [&](const std::vector<cd>& CA, int n, const std::vector<cd>& Qm, int m2, std::vector<cd>& CN){
+            CN.assign((size_t)m2*m2, cd(0,0));                        // CN = Q^dag C Q
+            std::vector<cd> T((size_t)m2*n, cd(0,0));                 // T = C Q  (n x m2)
+            for(int c=0;c<m2;c++) for(int y=0;y<n;y++){
+                cd q = Qm[(size_t)c*n+y]; if(q==cd(0,0)) continue;
+                for(int x=0;x<n;x++) T[(size_t)c*n+x] += CA[(size_t)y*n+x]*q;
+            }
+            for(int c=0;c<m2;c++) for(int r=0;r<m2;r++){
+                cd acc(0,0);
+                for(int x=0;x<n;x++) acc += std::conj(Qm[(size_t)r*n+x])*T[(size_t)c*n+x];
+                CN[(size_t)c*m2+r] = acc;
+            }
+        };
+        // ---------------- P8: ladder band-structure diagnostic
+        auto run8 = [&](const char* tag, const std::vector<cd>& CA, int n, int s){
+            ModularC MA = modular_of_c(CA, n);
+            int m2=n-s;
+            std::vector<cd> Qm; subspace_std(n, s, Qm);
+            std::vector<cd> CN; compress_C(CA, n, Qm, m2, CN);
+            ModularC MN = modular_of_c(CN, m2);
+            // p_{jk} = |<w^A_k | w^N_j (+) 0>|^2 ; lambda-bar_j, spread_j, displacement delta_j
+            double dbar=0, dsd=0, sprbar=0; int npos=0;
+            std::vector<double> del(m2);
+            for(int j=0;j<m2;j++){
+                double lb=0, l2=0;
+                for(int k2=0;k2<n;k2++){
+                    cd ov(0,0);
+                    for(int x=0;x<m2;x++) ov += std::conj(MA.W[(size_t)k2*n+(s+x)])*MN.W[(size_t)j*m2+x];
+                    double p = std::norm(ov);
+                    lb += p*MA.lam[k2]; l2 += p*MA.lam[k2]*MA.lam[k2];
+                }
+                del[j] = lb - MN.lam[j];
+                dbar += del[j]; if(del[j]>0) npos++;
+                sprbar += std::sqrt(std::max(0.0, l2 - lb*lb));
+            }
+            dbar/=m2; sprbar/=m2;
+            for(int j=0;j<m2;j++) dsd += (del[j]-dbar)*(del[j]-dbar);
+            dsd = std::sqrt(dsd/m2);
+            fprintf(stderr,"P8 %s n=%3d  delta=%.4f+-%.4f  frac(delta>0)=%.3f  spread=%.3f\n",
+                    tag, n, dbar, dsd, npos/(double)m2, sprbar);
+        };
+        // ---------------- P9: cocycle eigenphase flow
+        auto run9 = [&](const char* tag, const std::vector<cd>& CA, int n, int s, double t, bool rnd, bool varb){
+            ModularC MA = modular_of_c(CA, n);
+            int m2=n-s;
+            std::vector<cd> Qm; if(rnd) subspace_rand(n,s,Qm); else subspace_std(n,s,Qm);
+            std::vector<cd> CN; compress_C(CA, n, Qm, m2, CN);
+            ModularC MN = modular_of_c(CN, m2);
+            std::vector<cd> UN; umat_from(MN, t, UN);
+            // U1 = Q UN Q^dag + f * (I - Q Q^dag), f = varb ? e^{-i kout t} : 1   (s=1: kout scalar)
+            double kout = 0.0;
+            if(varb){
+                // complement covariance (s=1): c_perp = q^dag C q for the unique complement direction
+                // std subspace: q = e_0 -> c_perp = C_00
+                double cperp = CA[0].real();
+                cperp = std::min(std::max(cperp, CLAMP_G), 1.0-CLAMP_G);
+                kout = std::log((1.0-cperp)/cperp);
+            }
+            std::vector<cd> T((size_t)m2*n, cd(0,0));                 // T = Q UN (n x m2)
+            for(int c=0;c<m2;c++) for(int a=0;a<m2;a++){
+                cd u = UN[(size_t)c*m2+a]; if(u==cd(0,0)) continue;
+                for(int r=0;r<n;r++) T[(size_t)c*n+r] += Qm[(size_t)a*n+r]*u;
+            }
+            std::vector<cd> U1((size_t)n*n, cd(0,0)), QQ((size_t)n*n, cd(0,0));
+            for(int c=0;c<n;c++) for(int a=0;a<m2;a++){
+                cd q = std::conj(Qm[(size_t)a*n+c]); if(q==cd(0,0)) continue;
+                for(int r=0;r<n;r++){ U1[(size_t)c*n+r] += T[(size_t)a*n+r]*q;
+                                      QQ[(size_t)c*n+r] += Qm[(size_t)a*n+r]*q; }
+            }
+            cd f = varb ? std::polar(1.0, -kout*t) : cd(1,0);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++)
+                U1[(size_t)c*n+r] += f*(((r==c)?cd(1,0):cd(0,0)) - QQ[(size_t)c*n+r]);
+            std::vector<cd> U2; umat_from(MA, -t, U2);
+            std::vector<cd> V((size_t)n*n, cd(0,0));                  // V = U1 U2
+            for(int c=0;c<n;c++) for(int a=0;a<n;a++){
+                cd b = U2[(size_t)c*n+a]; if(b==cd(0,0)) continue;
+                for(int r=0;r<n;r++) V[(size_t)c*n+r] += U1[(size_t)a*n+r]*b;
+            }
+            std::vector<double> th; double minr=0;
+            std::vector<cd> EV;
+            eigenphases(n, V, th, &minr, &EV);
+            double neg=0,pos=0,mn=1e9,mx=-1e9; int nneg=0;
+            for(double x : th){ mn=std::min(mn,x); mx=std::max(mx,x);
+                if(x<0){ neg-=x; nneg++; } else pos+=x; }
+            // UV/IR sector diagnostic: q_j = sum_k |<w^A_k|v_j>|^2 |lam^A_k| — is theta-sign
+            // correlated with modular-UV weight? Also the IR-restricted flow (q_j below median).
+            std::vector<double> q(n,0.0);
+            for(int j=0;j<n;j++){
+                for(int k2=0;k2<n;k2++){
+                    cd ov(0,0);
+                    for(int r=0;r<n;r++) ov += std::conj(MA.W[(size_t)k2*n+r])*EV[(size_t)j*n+r];
+                    q[j] += std::norm(ov)*std::fabs(MA.lam[k2]);
+                }
+            }
+            std::vector<double> qs=q; std::nth_element(qs.begin(), qs.begin()+n/2, qs.end());
+            double qmed = qs[n/2];
+            double qneg=0,qpos=0, irneg=0, irpos=0; int cn=0,cp=0;
+            for(int j=0;j<n;j++){
+                if(th[j]<0){ qneg+=q[j]; cn++; } else { qpos+=q[j]; cp++; }
+                if(q[j]<qmed){ if(th[j]<0) irneg-=th[j]; else irpos+=th[j]; }
+            }
+            fprintf(stderr,"P9 %s%s n=%3d t=%+.3f  minth=%+.5f maxth=%+.5f  neg=%.5f pos=%.5f nneg=%3d/%3d  drift=%+.4f  sided=%.2f"
+                           "  | qneg=%.2f qpos=%.2f  IR: neg=%.5f pos=%.5f sided=%.2f  minr=%.6f\n",
+                    tag, varb?"-b":"  ", n, t, mn, mx, neg, pos, nneg, n, pos-neg,
+                    std::min(neg,pos)>1e-12 ? std::max(neg,pos)/std::min(neg,pos) : 1e12,
+                    cn? qneg/cn:0, cp? qpos/cp:0, irneg, irpos,
+                    std::min(irneg,irpos)>1e-12 ? std::max(irneg,irpos)/std::min(irneg,irpos) : 1e12, minr);
+        };
+        if(probe_id==8){
+            for(int n : {32, 128}){ std::vector<cd> CA; build_chiral_window(4*n, n, CA); run8("chiral", CA, n, 1); }
+            for(int n : {32, 128}){
+                int L=2*n; std::vector<double> h,C; build_h(h,L,0,0.0,0); ground_cov(h,L,C);
+                std::vector<cd> CA((size_t)n*n);
+                for(int c=0;c<n;c++) for(int r=0;r<n;r++) CA[(size_t)c*n+r] = cd(C[(size_t)(n+r)*L+(n+c)],0.0);
+                run8("t-inv ", CA, n, 1);
+            }
+            return 0;
+        }
+        // probe 9
+        for(int n : {32, 64, 128}){
+            std::vector<cd> CA; build_chiral_window(4*n, n, CA);
+            for(double tt : {0.01, 0.02, 0.05}) run9("chiral", CA, n, 1, tt, false, false);
+            run9("chiral", CA, n, 1, -0.02, false, false);
+            run9("chiral", CA, n, 1, 0.02, false, true);
+        }
+        for(int n : {32, 128}){
+            int L=2*n; std::vector<double> h,C; build_h(h,L,0,0.0,0); ground_cov(h,L,C);
+            std::vector<cd> CA((size_t)n*n);
+            for(int c=0;c<n;c++) for(int r=0;r<n;r++) CA[(size_t)c*n+r] = cd(C[(size_t)(n+r)*L+(n+c)],0.0);
+            for(double tt : {0.02, 0.05}) run9("t-inv ", CA, n, 1, tt, false, false);
+        }
+        for(int n : {32, 128}){
+            std::vector<cd> CA; build_chiral_window(4*n, n, CA);
+            run9("ch-rnd", CA, n, 1, 0.02, true, false);
+            run9("ch-rnd", CA, n, 1, 0.05, true, false);
+        }
+        return 0;
+    }
     if(getenv("HSMI_PROBE") && atoi(getenv("HSMI_PROBE"))==7){   // v1.1 WITNESS probe (Q-001 ruling): winding/index
         // M(t) = P_N U(t) P_N; bulk symbol phi(theta) = sum_d M[j0][j0+d] e^{i d theta} from the
         // center row; winding(phi) = the finite shadow of the Fredholm index of the half-infinite
