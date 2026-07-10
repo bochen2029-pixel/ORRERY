@@ -8,9 +8,9 @@
 someone.exe --pop 200 --k 64 --seed 7 --json
 ```
 
-**Status:** `v0.1.0` · founded 2026-07-05 · **the buildable catalogue is complete.** Six tools — `someone`, `ratchet`, `posit`, `mcts`, `algebra`, `autotune` — are built, golden-frozen, and each independently **cold-two-pass verified**; the compile-as-verification harness is green across CUDA *and* Python. Only `lens` remains (a deliberately parked, pre-registered SPIKE). The spec still ships before the code — every tool went contract-first → golden → two-pass, and each result is reproducible from its `result.lock`.
+**Status:** founded 2026-07-05 · **eight tools built, golden-frozen, and each independently cold-two-pass verified**; the compile-as-verification harness is green across CUDA, C++, *and* Python. Wave 0 (2026-07-09) extracted the invariant core into **`lib/` (liborrery)** — all four CUDA tools were migrated onto it with their goldens reproduced **bit-identically** ("the code is ephemeral," exercised for real) — and added the two **surfaces**: an MCP server (`mcp`) so LLM callers can drive the catalogue, and a job daemon (`orreryd`) for unattended GPU campaigns. Only `lens` remains (a deliberately parked, pre-registered SPIKE). Every tool went contract-first → golden → two-pass; every citable result is reproducible from its `result.lock`.
 
-The instrument that serves the theory at **[finaltheoryofeverything.org](https://finaltheoryofeverything.org)** — *The Unfinished Mirror*.
+The instrument that serves the theory at **[finaltheoryofeverything.org](https://finaltheoryofeverything.org)** — *The Unfinished Mirror*. The live catalogue page: **[finaltheoryofeverything.org/lab](https://finaltheoryofeverything.org/lab)** (generated from this repo's registry via the `mcp` surface).
 
 ---
 
@@ -66,15 +66,32 @@ Seeded from existing GPU/engineering engines (the `dak_evolution`, `criticality`
 
 | Tool | Lang | What it measures | Status |
 |---|---|---|---|
-| **someone** | C++/CUDA | Evolutionary Someone-Criterion: self-modeling agents (encoder → bottleneck → decoder → predictor, a `pureGap` = the gap between the world and the agent's model of it) vs gapless "zombies", under survival stakes — *does the gap earn its keep?* The template every later tool copies. | **DONE** (v1.1.0, golden `aa5b731d`, cold two-pass ✓) |
-| **ratchet** | C++/CUDA | Branching / phase transition; the critical `(1−p)ρ = p` point at billions of trials | **DONE** (v1.0.0, golden `91fce3c4`, cold two-pass ✓) |
-| **algebra** | C++/CUDA (cuSOLVER) | Crossed-product entropy-from-an-observer; the receipted `c=1` block-entropy divergence vs cutoff (scoped) | **DONE** (v1.0.0, golden `1526918f`, cold two-pass ✓) |
+| **someone** | CUDA | Evolutionary Someone-Criterion: self-modeling agents (encoder → bottleneck → decoder → predictor, a `pureGap` = the gap between the world and the agent's model of it) vs gapless "zombies", under survival stakes — *does the gap earn its keep?* The template every later tool copies. | **DONE** (v1.1.1, golden `aa5b731d`, cold two-pass ✓) |
+| **ratchet** | CUDA | Branching / phase transition; the critical `(1−p)ρ = p` point at billions of trials (MC↔analytic to 0.06%) | **DONE** (v1.0.1, golden `91fce3c4`, cold two-pass ✓) |
+| **algebra** | CUDA (cuSOLVER) | Crossed-product entropy-from-an-observer; the receipted `c=1` block-entropy divergence vs Calabrese–Cardy, plus a massive `c≈0` control (deliberately scoped — a value the theory itself withdrew is excluded by contract) | **DONE** (v1.0.1, golden `1526918f`, cold two-pass ✓) |
 | **posit** | Python | Parsimony auditor — physics-layer vs overlay posit budget (the runnable Occam check) | **DONE** (v1.0.0, golden `7a22dd22`, cold two-pass ✓) |
-| **mcts** | C++/CUDA | Generic Monte-Carlo Tree Search over a supplied action/parameter space | **DONE** (v1.0.0, golden `6c596a53`, cold two-pass ✓) |
-| **autotune** | Python (glue) | Sweep any tool's parameters; find the band / the basin (drives the built tools) | **DONE** (v1.0.0, golden `c79002f2`, cold two-pass ✓) |
+| **mcts** | CUDA | Generic root-parallel Monte-Carlo Tree Search over a supplied action/parameter space | **DONE** (v1.0.0, golden `6c596a53`, cold two-pass ✓) |
+| **autotune** | Python (glue) | Sweep any tool's parameters against a **pre-registered** target; find the band / the basin (it located ratchet's critical point blind: `ρ_c = 0.2581` vs analytic `0.25`) | **DONE** (v1.0.0, golden `c79002f2`, cold two-pass ✓) |
+| **mcp** | Python | **Surface #1:** stdio JSON-RPC MCP server — LLM callers list, inspect (contracts served verbatim), and run the catalogue; every response embeds the declared-output hash | **DONE** (v1.0.0, golden `174ec02d`, cold two-pass ✓) |
+| **orreryd** | C++20 | **Surface #2:** file-spool job daemon — one GPU tenant, FIFO, per-job wall-clock budgets, `.stop`/`.DONE` sentinels, a status page; unattended campaigns | **DONE** (v0.1.0, golden `86f133bb`, cold two-pass ✓) |
 | **lens** | CUDA/OptiX | RT-core render of the physics geometry (honestly scoped) | backlog (parked SPIKE) |
 
+**The shared core (`lib/`, liborrery):** the universal envelope (canonical serialization + BLAKE2b golden hashing), the stateless counter-RNG kit, and the deterministic reductions — extracted *verbatim* from the template and pinned by a 42-check KAT selftest (including separately-pinned host/device RNG bit patterns: MSVC and CUDA libm really do diverge by 1 ULP, and the pin fires before that could ever silently break a golden). All four CUDA tools build against it; each migration was gated on **bit-identical** golden reproduction.
+
 **Parked spike (pre-registered kill):** *RT-cores as isomorphic compute* for the intrinsically low-dimensional physics (geodesics, light-cones) — the Carmack move that might win *here* where it lost at high-dimensional attention. Belief waits on an honest baseline plus measurement.
+
+## Verify it yourself
+
+Every claim above is checkable from a clone (GPU tools need CUDA + sm_89-class hardware; `posit`/`autotune`/`mcp` run anywhere Python does):
+
+```
+python tools/posit/posit.py --selftest      # any machine: the internal battery, exit 0
+python tools/posit/posit.py --golden        # recompute the frozen golden hash, exit 0
+python harness/verify.py                    # the whole instrument: build -> selftest -> golden, every tool
+python tools/mcp/mcp.py --once "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"
+```
+
+Independent verification verdicts live in [`runs/`](runs/) (`*_twopass_verify.md`) — each written by a cold-context agent that never read the tool's source.
 
 ## What this is — and what it is NOT
 
@@ -85,23 +102,27 @@ Seeded from existing GPU/engineering engines (the `dak_evolution`, `criticality`
 ## Repository layout
 
 ```
-ARCHITECTURE.md      the spec / the product (read this first)
+ARCHITECTURE.md      the spec / the product (read this first; §5 = the 14 invariants)
 CLAUDE.md            the build harness + operating manual for a build session
 DECISIONS.md         the ADR log (D-001 …), append-only
 AUTONOMY_CHARTER.md  what a build session may and may not do
-BUILD.md             the exact compile incantation + the determinism checklist
-TASKLIST.md          the ordered build plan
+BUILD.md             the exact compile incantations + the determinism checklist
+TASKLIST.md          the ordered build plan (Phases 0–5 complete; Wave 1 next)
 RUN_STATE.md         current state + the next concrete action
+docs/                adopted proposals (the wave plan that opened Phases 5–8)
 contracts/           the sacred tool contracts (.md) + machine-checkable schemas (.json)
-tools/<tool>/        tool source (.cu / .py) + its MODULE.md
+lib/                 liborrery — the KAT-pinned invariant core every tool builds on
+tools/<tool>/        tool source (.cu / .cpp / .py) + its MODULE.md
 goldens/<tool>/      the frozen (params -> hash) goldens
+runs/                result.locks + independent cold-two-pass verification verdicts
 harness/             compile-as-verification (build all -> selftest all -> golden all)
+CMakePresets.json    fat-binary preset (sm_89+sm_90 SASS, PTX for the future; fast-math banned)
 ```
 
 ## Building
 
-Requires an NVIDIA GPU and CUDA. This machine targets **CUDA 13.1, `-arch=sm_89`** (RTX 4070 Ti SUPER, 16 GB), compiled through the **MSVC 2022** host toolchain. The exact single-file incantation and the determinism checklist are in [`BUILD.md`](BUILD.md). Build artifacts (`*.exe`, `*.obj`, …) are intentionally untracked — the code is ephemeral; source, contract, and golden are load-bearing.
+CUDA tools require an NVIDIA GPU and CUDA. This machine targets **CUDA 13.1, `-arch=sm_89`** (RTX 4070 Ti SUPER, 16 GB), compiled through the **MSVC 2022** host toolchain; tools build with one command each (`nvcc … <tool>.cu ../../lib/envelope.cpp …` — the exact fenced incantation lives in each tool's `MODULE.md`, and the determinism checklist in [`BUILD.md`](BUILD.md)). A repo-level CMake preset builds fat binaries (sm_89 + sm_90 SASS, embedded PTX for future GPUs); **fast-math is banned project-wide** — an accelerated path ships with a paired-oracle error bound or it does not ship. Goldens are hardware-pinned to sm_89; re-baselining on other hardware is an operator-signed act. Build artifacts (`*.exe`, `*.obj`, …) are intentionally untracked — the code is ephemeral; source, contract, and golden are load-bearing.
 
 ---
 
-*Owner: Bo Chen. Built with Claude (Opus). The instrument for [finaltheoryofeverything.org](https://finaltheoryofeverything.org). The spec is the product; build the contracts, gate the goldens, and let the tools compound.*
+*Owner: Bo Chen. Built with Claude (Opus 4 founded it; Fable 5 built Wave 0 and the surfaces). The instrument for [finaltheoryofeverything.org](https://finaltheoryofeverything.org) · live catalogue at [/lab](https://finaltheoryofeverything.org/lab). The spec is the product; build the contracts, gate the goldens, and let the tools compound.*
