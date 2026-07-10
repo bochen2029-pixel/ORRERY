@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ORRERY hsmi-stab v1.0.0 --json output envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "hsmi-stab" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sites", "shift", "family", "eps_max", "eps_points", "t_max", "t_points",
+                   "k_min", "snap_frac", "arrow_min"],
+      "properties": {
+        "sites": { "type": "integer", "minimum": 8, "maximum": 2048 },
+        "shift": { "type": "integer", "minimum": 1 },
+        "family": { "enum": ["mass", "noise"] },
+        "eps_max": { "type": "number", "exclusiveMinimum": 0, "maximum": 0.5 },
+        "eps_points": { "type": "integer", "minimum": 3, "maximum": 64 },
+        "t_max": { "type": "number", "exclusiveMinimum": 0, "maximum": 20 },
+        "t_points": { "type": "integer", "minimum": 8, "maximum": 512 },
+        "k_min": { "type": "number", "minimum": 0, "maximum": 8 },
+        "snap_frac": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "arrow_min": { "type": "number", "minimum": 1 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sites", "shift", "family", "flow_sign", "delta_minus_0", "delta_plus_0",
+                   "arrow_ratio", "delta_minus_eps1", "delta_minus_max", "k_fit", "c_fit",
+                   "fit_points", "growth_monotone", "verdict_kind"],
+      "properties": {
+        "sites": { "type": "integer" },
+        "shift": { "type": "integer" },
+        "family": { "enum": ["mass", "noise"] },
+        "flow_sign": { "enum": [1, -1] },
+        "delta_minus_0": { "type": "number", "minimum": 0 },
+        "delta_plus_0": { "type": "number", "minimum": 0 },
+        "arrow_ratio": { "type": "number", "minimum": 0 },
+        "delta_minus_eps1": { "type": "number", "minimum": 0 },
+        "delta_minus_max": { "type": "number", "minimum": 0 },
+        "k_fit": { "type": "number" },
+        "c_fit": { "type": "number" },
+        "fit_points": { "type": "integer", "minimum": 0 },
+        "growth_monotone": { "type": "boolean" },
+        "verdict_kind": { "enum": ["graceful", "snap", "soft"] }
+      }
+    },
+    "verdict": { "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "enum": ["G-NO-ARROW", "G-RIGID", "G-SOFT-EXPONENT"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

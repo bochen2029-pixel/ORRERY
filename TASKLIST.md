@@ -56,7 +56,7 @@ Adoption state: **D-020, D-021 ACTIVE** (this commit); D-022..D-026 remain PROPO
 **PHASE 5 COMPLETE 2026-07-09** — lib + 4 bit-identical migrations + CMake preset + mcp + orreryd + /lab. The instrument is LLM-callable, campaign-runnable, and presentable; publish is the one remaining human act.
 
 ## Phase 6 — Wave 1 (the make-or-break physics; adopt D-026 pre-contract per tool)  ← NEXT (fresh full-budget session for `hsmi-stab`)
-- [NOT_STARTED] `hsmi-stab` (F-K1; first by dignity) → [NOT_STARTED] `trace-born` (C-TRACE) → [NOT_STARTED] `carve` (Layer-2/P2). Each: full loop, oracle named (I-11), two-pass, science-handback memo (the someone S5 pattern).
+- [IN_PROGRESS] `hsmi-stab` (F-K1; first by dignity; D-026 adopted Active at this opening) — **CONTRACT v1.0.0 FROZEN 2026-07-10** (+ schema + MODULE with the full math spec: critical free-fermion half-line proxy, δ± violation functional, mass+noise deformation families, pre-registered k-min/snap-frac/arrow-min, Fock-space oracle at L=6 + negative control + continuum anchor, the Type-I scope guard). Implementation opens against it. → [NOT_STARTED] `trace-born` (C-TRACE) → [NOT_STARTED] `carve` (Layer-2/P2). Each: full loop, oracle named (I-11), two-pass, science-handback memo (the someone S5 pattern).
 
 ## Phase 7 — Wave 2
 - [NOT_STARTED] `ratchet-v2` (DP exponents) → `clifford/mipt` → `everpresent` (I-14 frozen DESI data) → `someone-v2` (metabolic k) → `modfluc` (F-SEAM) → `fork` (F-BMV) → `prequent` → `algebra` v1.1 (the owed fixed-site Part-B refit, D-018 deferral).
