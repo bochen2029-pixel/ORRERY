@@ -14,7 +14,7 @@ Each tool is a module: one directory, one `MODULE.md`, one contract (in `../cont
 | autotune | Python (glue) | **DONE v1.0.0** (golden `c79002f2`; det. exact; drives the built tools — found ratchet's ρ_c; **cold two-pass verified** — CONFORMANT) | `tools/autotune/` |
 | **mcp** | Python | **DONE v1.0.0** (golden `174ec02d`; det. exact; the MCP surface, D-022 — six JSON-RPC tools, I-12 hash chain; live-smoked driving ratchet on GPU) | `tools/mcp/` |
 | **orreryd** | C++20 (host) | **DONE v0.1.0** (golden `86f133bb`; det. exact; the job daemon, D-022 v0 — spool FIFO + budgets + sentinels + status page, on liborrery; live-smoked GPU drain + budget kill) | `tools/orreryd/` |
-| **lens** | CUDA/OptiX | **DONE v1.0.0** (golden `11e545b8`; det. 3× on the sm_89+OptiX 9.1.0+drv 610.47 pin; OptiX RT-core silhouette render + I-11 oracle — Schwarzschild capture 27π M² / sphere πR²; RT↔baseline I-13 delta=0; honest scope D-004 — render only, geodesic compute-SPIKE pre-registered with a kill) | `tools/lens/` |
+| **lens** | CUDA/OptiX | **DONE v1.0.0** (golden `11e545b8`; det. 3× on the sm_89+OptiX 9.1.0+drv 610.47 pin; OptiX RT-core silhouette render + I-11 oracle — Schwarzschild capture 27π M² / sphere πR²; RT↔baseline I-13 delta=0; honest scope D-004 — render only, geodesic compute-SPIKE pre-registered with a kill; **cold two-pass verified — CONFORMANT**) | `tools/lens/` |
 
 The CUDA tools build against **`lib/` (liborrery, D-020)** — the invariant core (envelope/RNG/reductions), KAT-selftested, extracted verbatim from `someone`. Build commands gain `../../lib/envelope.cpp`; each migration was gated on bit-identical golden reproduction.
 
