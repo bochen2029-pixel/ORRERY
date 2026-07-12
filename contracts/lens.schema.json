@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/lens.schema.json",
+  "title": "lens --json output envelope",
+  "description": "Machine-checkable schema for the lens tool's --json output. Matches contracts/lens.contract.md v1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "lens" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scene", "radius", "mass", "width", "height", "extent", "engine", "tol_oracle", "tol_rt_px"],
+      "properties": {
+        "scene": { "type": "string", "enum": ["sphere", "bhshadow"] },
+        "radius": { "type": "number", "exclusiveMinimum": 0.0 },
+        "mass": { "type": "number", "exclusiveMinimum": 0.0 },
+        "width": { "type": "integer", "minimum": 16, "maximum": 8192 },
+        "height": { "type": "integer", "minimum": 16, "maximum": 8192 },
+        "extent": { "type": "number", "exclusiveMinimum": 0.0 },
+        "engine": { "type": "string", "enum": ["baseline", "both"] },
+        "tol_oracle": { "type": "number", "minimum": 0.0 },
+        "tol_rt_px": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scene", "silhouette_radius", "image_extent", "width", "height", "total_pixels",
+                   "hit_pixels", "hit_fraction", "area_measured", "area_oracle", "area_rel_err",
+                   "engine", "hit_pixels_rt", "rt_baseline_delta", "rt_agrees"],
+      "properties": {
+        "scene": { "type": "string", "enum": ["sphere", "bhshadow"] },
+        "silhouette_radius": { "type": "number", "exclusiveMinimum": 0.0 },
+        "image_extent": { "type": "number", "exclusiveMinimum": 0.0 },
+        "width": { "type": "integer" },
+        "height": { "type": "integer" },
+        "total_pixels": { "type": "integer", "minimum": 1 },
+        "hit_pixels": { "type": "integer", "minimum": 0 },
+        "hit_fraction": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "area_measured": { "type": "number", "minimum": 0.0 },
+        "area_oracle": { "type": "number", "exclusiveMinimum": 0.0 },
+        "area_rel_err": { "type": "number", "minimum": 0.0 },
+        "engine": { "type": "string", "enum": ["baseline", "both"] },
+        "hit_pixels_rt": { "type": "integer", "minimum": -1 },
+        "rt_baseline_delta": { "type": "integer", "minimum": -1 },
+        "rt_agrees": { "type": "integer", "minimum": -1, "maximum": 1 }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-ORACLE-MISMATCH", "G-RT-DIVERGE"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}
