@@ -120,8 +120,21 @@ matched accuracy, **retire the RT-as-isomorphic-compute claim for relativistic g
 it (the RAYFORMER ADR-007 protocol). Until run and graduated, `lens` asserts no speedup; RT is used
 only for the render and the I-13 cross-check.
 
+**RESOLUTION (2026-07-12, measured — D-030): the SPIKE was RUN and RETIRED.** The fp64 CUDA geodesic
+baseline integrates the Schwarzschild null-geodesic Binet equation and *derives* the shadow
+(σ = 27π M², b_crit = √27 M, validated to 2.5e-6) at ~1.01×10⁷ ray-integrations/sec; an RT shell-marcher
+at matched accuracy (≈6000 traces/ray at 5.89×10⁹ traces/sec) manages only ~9.8×10⁵ rays/sec — the
+baseline is ~10× faster, so the ≥1.5× kill fires. RT-cores-as-compute is retired for relativistic
+geodesic rendering (the cost is fp64 ODE arithmetic, not ray-geometry intersection). The geodesic
+baseline itself validated and is a candidate v1.1.0 MINOR. Memo: `runs/lens_spike_geodesic.md`.
+`lens` v1.0.0 behavior/golden are UNCHANGED by this resolution.
+
 ## Change log
 - v1.0.0 — initial contract. Scenes `sphere` (oracle π R²) + `bhshadow` (oracle 27π M², b_crit=√27 M);
   orthographic cross-section measurement; baseline + OptiX RT engines with the I-13 agreement gate;
   D-004 honest scope (render only; geodesic compute-SPIKE pre-registered with a kill). Golden =
   `bhshadow` at 1024².
+- 2026-07-12 (no version bump — v1.0.0 behavior/CLI/schema/golden UNCHANGED) — the pre-registered
+  compute-SPIKE was RUN and **RETIRED** (measured ~10× loss at matched accuracy; D-030,
+  `runs/lens_spike_geodesic.md`). The fp64 geodesic baseline validated (derives 27π M² from the metric)
+  and is a candidate v1.1.0 MINOR. See the RESOLUTION note in "Parked SPIKE" above.
