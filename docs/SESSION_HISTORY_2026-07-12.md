@@ -54,3 +54,20 @@ async background-Monitor mechanism hangs on them).
 ## Continuing (2026-07-13) — entries appended below as work proceeds
 - 2026-07-13 ~01:24 — state scan (above) + first `git bundle` snapshot + this log created. Next: continue
   the TinyUniverse DX asks (operator-chosen direction).
+- 2026-07-13 ~01:44 — **orrery v1.1.0** (R-5 content-addressed run cache) landed → commit **`a1942bc`**,
+  pushed (`bfa13ed..a1942bc`), snapshot `ORRERY-20260713_014414-a1942bc.bundle`.
+  - Feature: `orrery run <tool> --cache` + `orrery cache` (stats/--get/--clear). Key =
+    `blake2b(tool + canonical-params + tool-binary-hash)` → a rebuilt binary invalidates stale entries;
+    only declared-output runs stored; errors never cached; lives under `runs/cache/` (gitignored).
+  - **Additive-safe:** declared golden **`43977185` UNCHANGED**, reproduced byte-identical; the 7 source
+    deletions are pure wiring (no declared-output logic removed).
+  - **Cold two-pass** (`runs/orrery_v1_1_0_cache_twopass_verify.md`, foreground-only per the banked lesson):
+    **CONFORMANT to v1.1.0, 8/8, no cache defects** — MISS/HIT/no-cache stdout byte-identical, HIT proven
+    to NOT spawn the tool (spawn-counter instrumented), binary-hash invalidation confirmed, errors never
+    cached. It also **caught a re-freeze-hygiene gap**: `goldens/orrery/stdout.txt` was one byte stale (the
+    `version` envelope field `1.0.0`→`1.1.0`, which lives outside the D-013 hashed domain) — re-frozen here,
+    `declared.hash` untouched. Corrected a canon overclaim: cold two-pass now stated precisely as
+    **v1.0.0 core 11/11 + v1.1.0 cache 8/8** (was a blanket "11/11").
+  - Value of the two-pass: it converted a silent stale-snapshot + an imprecise canon claim into an honest,
+    measured record. The cache — the class of feature most prone to silent corruption — was proven
+    transparent (a HIT is byte-equal to a fresh run) rather than merely asserted so.
