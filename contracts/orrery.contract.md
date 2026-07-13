@@ -1,4 +1,4 @@
-# orrery — Contract  v1.0.0
+# orrery — Contract  v1.1.0
 
 ## Purpose
 The **ergonomic CLI over the catalogue** (TinyUniverse R-1/R-2/R-3; D-033): plain-flag subcommands to
@@ -25,7 +25,8 @@ orrery --json | --selftest | --golden   # meta-modes (self-check envelope)
 |---|---|---|
 | `list` | `orrery list [--json]` | list the live registry (name, lang, contract version, golden hash). Table by default; `--json` emits the raw registry array. Exit 0. |
 | `describe` | `orrery describe <tool>` | print the tool's machine schema + human contract **verbatim** (+ their blake2b). Unknown tool → exit 2. |
-| `run` | `orrery run <tool> [--flag val ...] [--golden] [--json]` | run the tool with plain flags (mapped to `--flag val`; bare `--flag` → boolean). Prints the tool's declared envelope + the **I-12** `declared_blake2b` + `artifact_blake2b` (to stderr). Exit mirrors the tool: **0** pass · **1** gate-fired · **2** error/timeout. |
+| `run` | `orrery run <tool> [--flag val ...] [--golden] [--json] [--cache]` | run the tool with plain flags (mapped to `--flag val`; bare `--flag` → boolean). Prints the tool's declared envelope + the **I-12** `declared_blake2b` + `artifact_blake2b` (to stderr). Exit mirrors the tool: **0** pass · **1** gate-fired · **2** error/timeout. **[v1.1.0]** `--cache` consults/stores a content-addressed run cache (below) — a hit returns the stored declared output WITHOUT re-running (stderr tags `[CACHE HIT]`/`[CACHE MISS]`). |
+| `cache` | `orrery cache [--clear \| --get <key>]` | **[v1.1.0]** inspect the run cache: default prints stats + entries; `--clear` empties it; `--get <key>` prints one cached record. Exit 0. |
 | `sweep` | `orrery sweep <tool> --sweep NAME --metric FIELD --lo L --hi H --target T [--points N] [--fixed "..."] [--locate peak\|threshold] [--level V] [--tol T]` | drive `autotune` in real-tool mode against a **pre-registered** `--target` (autotune's contract governs semantics); prints the autotune record + hashes. Exit 0/1/2. |
 | `verify` | `orrery verify <tool> [--flag val ...] --expect-hash <64-hex>` | **R-3:** re-run the tool, canonically hash its declared object (I-12), compare to `--expect-hash`. Prints `MATCH`/`MISMATCH` + both hashes. Exit **0** MATCH · **1** MISMATCH (a real finding, not an error) · **2** error. |
 | `mcp-register` | `orrery mcp-register [--json]` | **R-2:** print the exact `claude mcp add` command + the raw MCP-config JSON to register the `mcp` stdio server as `mcp__orrery__*` in a Claude Code session, and the tool names it exposes. Exit 0. |
@@ -73,6 +74,15 @@ commit — it depends, deliberately, on `posit`'s golden and the six v1 tools' c
 (same narrow coupling as `mcp`). Subcommand output over live data (`list`) reflects the catalogue as it
 grows — that is its job, not drift. Declared hash domain = D-013.
 
+## Run cache (R-5, v1.1.0) — content-addressed, NON-declared
+`run --cache` keys a store (`runs/cache/<key>.json`, gitignored) by **`blake2b(tool + canonical-params +
+tool-binary-blake2b)`**. Because the tools are deterministic (same params ⇒ byte-identical declared output)
+a cache hit is safe; because the key includes the **binary hash**, a rebuilt tool automatically MISSES
+(invalidation needs no manual step). A hit returns the stored `{envelope, declared_blake2b, exit_class}`
+without spawning the tool — so an agent verifies another's claim by *lookup*, and a fan-out stops re-paying
+for identical runs. Only declared-output runs are cached (errors/timeouts are not). The cache is
+operational/NON-declared — it never enters any golden or determinism claim; `--golden`/`--json` never touch it.
+
 ## Golden
 params: `python orrery.py --golden` (self-check at the fixed params above; no run-record write).
 recorded: `goldens/orrery/` (declared.hash + stdout.txt + NOTE.md).
@@ -83,5 +93,8 @@ right hash and MISMATCHes a wrong one. **If posit's golden is legitimately super
 in the same operator-signed commit** (`goldens/orrery/NOTE.md`).
 
 ## Change log
+- **v1.1.0** — 2026-07-13 (MINOR, additive; TinyUniverse **R-5**). Adds the content-addressed **run cache**:
+  `run --cache` (consult/store) + the `cache` subcommand (stats/clear/get). No existing flag/output/exit
+  changed; the cache is NON-declared and the self-check golden `43977185` reproduces byte-identical.
 - v1.0.0 — initial contract (D-033; TinyUniverse R-1 CLI + R-2 mcp-register + R-3 verify). Subcommands
   list/describe/run/sweep/verify/mcp-register over the reused `mcp` primitives; posit-chain self-check golden.

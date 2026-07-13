@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "mcp"))
 import mcp  # registry_scan, do_run_tool, do_describe_contract, do_sweep, blake2b_hex, extract_declared,
              # V1_CATALOGUE, GOLDENS_DIR, read_first_token, jstr, fmt6, ToolError
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 FIREWALL = ("A transport/orchestration CLI surface: it computes nothing scientific and says nothing about "
             "qualia - III-sealed. It calls the sacred executables and serves their contracts verbatim.")
 KEY_RE = re.compile(r"^[A-Za-z0-9-]+$")
@@ -47,6 +47,46 @@ def collect_params(argv):
         else:
             params[key] = True; i += 1
     return params
+
+# ------------------------------------------------------------------ content-addressed run cache (R-5, v1.1.0)
+# Keyed by (tool, canonical-params, tool-binary-blake2b) -> the stored declared output. Because the tools
+# are deterministic (same params ⇒ byte-identical declared output), a cache hit is safe; because the key
+# includes the binary hash, a rebuilt tool correctly MISSES (invalidation is automatic). Non-declared,
+# operational (gitignored under runs/cache/). Lets agents verify by hash-lookup instead of re-running.
+def _cache_dir():
+    d = os.path.join(mcp.ROOT, "runs", "cache")
+    try: os.makedirs(d, exist_ok=True)
+    except OSError: pass
+    return d
+
+def _cache_key(tool, params, artifact_path):
+    bh = mcp.file_blake2b(artifact_path) or ""
+    canon = json.dumps({"tool": tool, "params": params, "binary": bh}, sort_keys=True, separators=(",", ":"))
+    return mcp.blake2b_hex(canon)
+
+def _run_cached(tool, params):
+    """Cache-aware run: returns the run record (from cache or fresh; stores on a declared-output miss).
+    Adds rec['_cache'] = 'hit'|'miss'. Errors/timeouts (no declared object) are never cached."""
+    entry = mcp.registry_get(tool)
+    if entry is None or entry.get("artifact") is None:
+        rec = _run_record(tool, params); rec["_cache"] = "miss"; return rec   # will surface the error
+    cp = os.path.join(_cache_dir(), _cache_key(tool, params, entry["artifact"]) + ".json")
+    if os.path.isfile(cp):
+        try:
+            with open(cp, encoding="utf-8") as f: rec = json.load(f)
+            rec["_cache"] = "hit"; return rec
+        except (OSError, ValueError):
+            pass
+    rec = _run_record(tool, params); rec["_cache"] = "miss"
+    if rec.get("declared_blake2b") is not None:
+        try:
+            with open(cp, "w", encoding="utf-8") as f:
+                json.dump({"tool": tool, "params": params, "binary_blake2b": rec.get("artifact_blake2b"),
+                           "exit_class": rec["exit_class"], "envelope": rec["envelope"],
+                           "declared_blake2b": rec["declared_blake2b"]}, f, indent=1)
+        except OSError:
+            pass
+    return rec
 
 # ------------------------------------------------------------------ subcommands
 def cmd_list(argv):
@@ -83,19 +123,50 @@ def _run_record(tool, params):
 
 def cmd_run(argv):
     if not argv:
-        sys.stderr.write("usage: orrery run <tool> [--flag val ...] [--golden] [--json]\n"); return 2
+        sys.stderr.write("usage: orrery run <tool> [--flag val ...] [--golden] [--json] [--cache]\n"); return 2
     tool, params = argv[0], collect_params(argv[1:])
+    use_cache = bool(params.pop("cache", False))   # --cache is orrery's, not forwarded to the tool
     try:
-        rec = _run_record(tool, params)
+        rec = _run_cached(tool, params) if use_cache else _run_record(tool, params)
     except mcp.ToolError as e:
         sys.stderr.write(f"error: {e}\n"); return 2
-    if rec["envelope"] is not None:
+    if rec.get("envelope") is not None:
         print(json.dumps(rec["envelope"]))
+    tag = f"  [CACHE {rec['_cache'].upper()}]" if rec.get("_cache") else ""
     sys.stderr.write(f"[orrery] exit_class={rec['exit_class']}  declared_blake2b={rec['declared_blake2b']}  "
-                     f"artifact_blake2b={rec['artifact_blake2b']}\n")
-    if rec["envelope"] is None and rec.get("stderr_tail"):
+                     f"artifact_blake2b={rec.get('artifact_blake2b') or rec.get('binary_blake2b')}{tag}\n")
+    if rec.get("envelope") is None and rec.get("stderr_tail"):
         sys.stderr.write(rec["stderr_tail"] + "\n")
     return EXIT_CLASS.get(rec["exit_class"], 2)
+
+def cmd_cache(argv):
+    d = _cache_dir()
+    if "--clear" in argv:
+        n = 0
+        for f in os.listdir(d):
+            if f.endswith(".json"):
+                try: os.remove(os.path.join(d, f)); n += 1
+                except OSError: pass
+        print(f"cleared {n} cached run(s)"); return 0
+    if "--get" in argv:
+        i = argv.index("--get")
+        if i + 1 >= len(argv):
+            sys.stderr.write("error: cache --get needs a key\n"); return 2
+        cp = os.path.join(d, argv[i + 1] + ".json")
+        if not os.path.isfile(cp):
+            sys.stderr.write(f"error: no cached run for key {argv[i+1]}\n"); return 2
+        with open(cp, encoding="utf-8") as f: print(f.read())
+        return 0
+    files = [f for f in os.listdir(d) if f.endswith(".json")]
+    total = sum(os.path.getsize(os.path.join(d, f)) for f in files)
+    print(f"cache: {len(files)} run(s), {total} bytes  ({d})")
+    for f in sorted(files)[:30]:
+        try:
+            with open(os.path.join(d, f), encoding="utf-8") as fh: r = json.load(fh)
+            print(f"  {f[:-5][:16]}…  {r.get('tool',''):<10}{(r.get('declared_blake2b') or '')[:12]}…  {r.get('exit_class','')}")
+        except Exception:
+            pass
+    return 0
 
 def do_verify(tool, params, expect):
     """R-3 core: run the tool, return (match_bool, got_hash). got_hash None if no declared object."""
@@ -274,6 +345,21 @@ def run_selftest():
     a = declared_object(0, {"chain_tool": "posit", "timeout_s": 120}, *self_check()[:3])
     b = declared_object(0, {"chain_tool": "posit", "timeout_s": 120}, *self_check()[:3])
     _chk("declared object identical across two self-checks", a == b, fails)
+    # R-5 run cache: deterministic key + a real round-trip (miss stores, hit returns the same), cleaned up
+    ent = mcp.registry_get("posit")
+    if ent and ent.get("artifact"):
+        k1 = _cache_key("posit", {"golden": True}, ent["artifact"])
+        _chk("cache key deterministic", k1 == _cache_key("posit", {"golden": True}, ent["artifact"]), fails)
+        cp = os.path.join(_cache_dir(), k1 + ".json")
+        if os.path.exists(cp):
+            try: os.remove(cp)
+            except OSError: pass
+        r1 = _run_cached("posit", {"golden": True})
+        _chk("cache miss stores on first --cache run", r1.get("_cache") == "miss" and os.path.isfile(cp), fails)
+        r2 = _run_cached("posit", {"golden": True})
+        _chk("cache hit returns posit's frozen hash", r2.get("_cache") == "hit" and r2.get("declared_blake2b") == _posit_frozen(), fails)
+        try: os.remove(cp)
+        except OSError: pass
     ok = len(fails) == 0
     sys.stderr.write("SELFTEST PASS\n" if ok else f"SELFTEST FAIL ({len(fails)})\n")
     return 0 if ok else 1
@@ -294,7 +380,7 @@ def main():
     if mode == "--json":
         result, gates, verdict, code = self_check()
         print(full_envelope(0, {"chain_tool": "posit", "timeout_s": 120}, result, gates, verdict)); return code
-    dispatch = {"list": cmd_list, "describe": cmd_describe, "run": cmd_run,
+    dispatch = {"list": cmd_list, "describe": cmd_describe, "run": cmd_run, "cache": cmd_cache,
                 "sweep": cmd_sweep, "verify": cmd_verify, "mcp-register": cmd_mcp_register}
     if mode not in dispatch:
         sys.stderr.write(f"error: unknown command '{mode}'\n{USAGE}\n"); return 2

@@ -18,6 +18,7 @@ tools/**/_*.csv
 **/_*.tmp
 runs/_*
 runs/mcp/
+runs/cache/
 _orreryd_*/
 tools/orreryd/_*/
 

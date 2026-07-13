@@ -1,4 +1,4 @@
-# golden — `orrery` v1.0.0
+# golden — `orrery` v1.1.0
 
 ## What is frozen
 The declared output of `python orrery.py --golden` — the CLI's **self-check**: run `posit --golden`
@@ -32,4 +32,10 @@ A CLI surface's value IS the calling of other tools, so the golden runs the narr
 Reuses `tools/mcp/mcp.py` (imported). Python 3.13. No GPU. Determinism is Python-exact.
 
 ## Re-baseline record
-- (none — v1.0.0 freeze.)
+- v1.0.0 freeze — original.
+- **v1.1.0 (2026-07-13)** — R-5 content-addressed run cache added (additive; new `cache` subcommand +
+  `run --cache`). The **declared golden hash is UNCHANGED** (`439771854c…`) because the cache never touches
+  the declared object — golden reproduced byte-identical, proving additive-safety. `stdout.txt` was
+  re-frozen to reflect the `version` envelope-field bump `1.0.0`→`1.1.0` (that field lives in the envelope
+  wrapper, outside the D-013 hashed domain, so it moves the snapshot but not the hash). Caught by the
+  v1.1.0 cache cold two-pass (`runs/orrery_v1_1_0_cache_twopass_verify.md`) as a re-freeze-hygiene gap.
