@@ -20,6 +20,29 @@ someone → **v1.2.0** (additive `--oracle` meta-mode). A faithful **fp64 CPU re
 ## `orrery` v1.0.0 SHIPPED (2026-07-13, D-033) — TinyUniverse R-1/R-2/R-3: the ergonomic CLI over the catalogue (12th tool)
 Operator chose the "DX quick-wins." Built **`orrery`**, a thin Python CLI: `list`/`describe`/`run`/`sweep` + a one-shot receipt-**`verify`** (`--expect-hash` → MATCH/MISMATCH, exit 0/1) + **`mcp-register`** (prints `claude mcp add orrery -- python …mcp.py --serve`). **Reuses the `mcp` primitives** (imports mcp.py; zero own subprocess/hashing) → the **I-12 hash chain is inherited**, no duplicated logic (D-020). Golden `43977185` (posit-chain self-check, like mcp; re-baselines with posit): det. 3×; selftest 9/9; harness GREEN; **cold two-pass CONFORMANT (11/11)** — `runs/orrery_twopass_verify.md` (ran foreground, no async hang — the golden is ms). R-1 (thin CLI), R-2 (mcp-register), R-3 (verify) all delivered; TinyUniverse is the first heavy user. Remaining asks (R-4 largely covered by `verify`; R-5 run-cache, R-8 discover→confirm, R-9 critexp, R-10 scaffold, R-11 checkpoint) await triage. **orrery v1.1.0 (2026-07-13): + R-5 the content-addressed run cache** — `run --cache` + `cache` subcommand, keyed by `blake2b(tool + params + binary-hash)` so a rebuilt tool auto-misses; a hit returns the stored declared output without re-running (agents verify by lookup; fan-outs stop re-paying). Additive-safe: NON-declared, golden `43977185` byte-identical; selftest +3 cache checks; cold two-pass CONFORMANT. **orrery = DONE v1.1.0.**
 
+## `trace-born` v1.0.0 SHIPPED (2026-07-13, D-026 lineage) — Wave-1 gear #2 (C-TRACE): the Born-from-redundancy tool (13th tool)
+Second Wave-1 gear, opened contract-first after `hsmi-stab` parked. **`trace-born`** measures the **F15
+mechanical core**: does the **normalized-trace weight over a redundancy-defined branch projection**
+(`w_i = Tr(Π_i ρ)/Z`) reproduce **Born `|c_i|²`** in a **decohering** finite `S⊗E^R` model? Computed by
+**brute-force full-state construction + partial trace** (the un-shortcut `d^{R+1}` GPU path) and cross-checked
+against the exact **analytic Gram oracle** `Σ|c_a|²(G_ia)^{2R}` (I-11; `oracle_max_dev`>1e-8 ⇒ exit 2 SUSPECT).
+Golden `d4e3bf04` (weights 2,3, R=6, full ⇒ Born [0.4,0.6], born_max_dev=0, purity 0.52 via cuSOLVER Zheevd,
+det. 3×). Declared witnesses of *why* the target is `|c_i|²`: STEP-A envariance (`residual=0` equal moduli /
+`break=0.201` unequal — non-vacuous) + STEP-B fine-graining (`microbranch_flat_dev=0` at `1/√M`). **Negative
+control:** partial decoherence (`s=0.5,R=2`) fires BOTH gates (`G-BORN-MISMATCH`+`G-NOT-DECOHERED`),
+`objectivity_dev>0` — reproduction is contingent on decoherence, not automatic (Darwinism: born_max_dev→0 as
+`R`↑). **Honest scope (algebra Part-A discipline):** the one undischarged premise — noncontextual credence =
+f(local state) (**D-BORN** `[OPEN/W]`, Baker 2007) — is labeled in `notes`+MODULE and **excluded** from every
+claim; no "derives Born"; §III-sealed (structure not qualia). Selftest 16/16; harness GREEN (cold rebuild);
+**cold two-pass CONFORMANT 11/11 — scope honest, no overclaim** (`runs/trace-born_twopass_verify.md` — verifier
+confirmed the two oracle paths are genuinely independent + the control discriminates via an R-sweep).
+Extends `algebra`'s cuSOLVER (Dsyevd→Zheevd; CUDA justified by the exponential `d^{R+1}` regime Python can't
+reach). Contract v1.0.0 + schema + MODULE + golden/NOTE + D-026 lineage + science-handback
+(`runs/trace-born_c-trace_handback.md`, F15/D-BORN-facing) + ARCHITECTURE §8 + tools/README. Ports/sharpens
+`toy_a1_born_finegrain.py`. Design de-risked first in `tools/trace-born/_prototype/born_proto.py` (numpy,
+every declared quantity validated before a line of CUDA). Deferred v1.1.0: born_max_dev(R) scaling exponent
+(Darwinism c-fit analogue); complex/random records; `d>8`. **trace-born = DONE v1.0.0; C-TRACE delivered.**
+
 ## Current state
 **Wave-0 (Phase 5) session, 2026-07-09.** Operator adopted the wave plan (`docs/PROPOSAL_2026-07-09_wave_plan.md`): D-020 (liborrery) + D-021 (CMake preset/fat binary/fast-math ban) ACTIVE; I-11..I-14 in ARCHITECTURE §5; Phase 5–8 addendum in TASKLIST. D-022..D-026 stay PROPOSED until their phases open.
 
@@ -54,12 +77,12 @@ D-026 adopted Active (per-tool opening protocol). Contract v1.0.0 + schema + MOD
 ## Next concrete action
 **Q-002 RULED (operator, 2026-07-10): science-handback — DELIVERED** (`runs/hsmi-stab_k1_witness_handback.md`; QUALIA_LAB-facing, claim-by-claim, reproduction-pinned to commit c9ceedb). **hsmi-stab is PARKED** pending the science's reformulation of F-K1's finite-D projection (the memo's §4 lists the asks + the three-control gauntlet any new witness must pass).
 
-**Closed since (2026-07-12/13):** `someone` fp64 oracle (D-025, v1.2.0) ✓ · TinyUniverse DX quick-wins landed as `orrery` (R-1/R-2/R-3/R-5, v1.1.0) ✓ + `shoot` (R-6, v1.0.0) ✓ + `lens` render arm (D-004 SPIKE ruled/retired) ✓. The catalogue is at **12 golden-frozen tools**; all cold two-pass CONFORMANT.
+**Closed since (2026-07-12/13):** `someone` fp64 oracle (D-025, v1.2.0) ✓ · TinyUniverse DX landed as `orrery` (R-1/R-2/R-3/R-5, v1.1.0) ✓ + `shoot` (R-6, v1.0.0) ✓ + `lens` render arm (D-004 SPIKE ruled/retired) ✓ · **`trace-born` (C-TRACE, Wave-1 gear #2, v1.0.0) ✓** — F15's Born-from-redundancy mechanical core, cold two-pass CONFORMANT 11/11, scope honest. The catalogue is at **13 golden-frozen tools**; all cold two-pass CONFORMANT.
 
 **The fork now (operator-gated — top three):**
-1. **`trace-born`** (C-TRACE, D-026 order book) — the next Wave-1 **science** gear around the keystone; contract-first fresh start (C++/CUDA). Moves the theory forward, not the ergonomics.
-2. **TinyUniverse DX, next tier** — the highest-leverage remaining ask is **R-10 `orrery new <tool>`** (a doctrine-baking scaffolder: emits contract+MODULE+golden-stub+selftest skeleton in one command → compounds every future build). Cheaper siblings: R-8 discover→confirm, R-11 durable checkpoint. (R-4 already covered by `verify`.)
-3. **`shoot` v1.1** (Fuchsian singular-point crossing / arbitrary-RHS) — a **physics extension** of the R-6 instrument; additive MINOR, serves the leverage suite's singular ODEs.
+1. **`carve`** (Layer-2/P2, D-026 order book) — the **third and last Wave-1 science gear**: factorization basins (candidate frames scored by Pauli-weight concentration of a fixed H; deterministic basin search; oracle = a **planted scrambler** with a known answer separating "search too weak" from "no preferred factorization"; gates `G-NO-BASIN`/`G-MULTI-BASIN`, both informative). Contract-first C++/CUDA + `mcts` (subprocess v1). Completes Wave 1's make-or-break trio.
+2. **TinyUniverse DX, next tier** — highest-leverage remaining ask is **R-10 `orrery new <tool>`** (a doctrine-baking scaffolder: emits contract+MODULE+golden-stub+selftest skeleton in one command → compounds every future build). Cheaper siblings: R-8 discover→confirm, R-11 durable checkpoint. (R-4 covered by `verify`.)
+3. **`trace-born` v1.1** (Darwinism scaling) or **`shoot` v1.1** (Fuchsian) — additive **physics extensions** of just-shipped instruments; the born_max_dev(R) objectivity exponent, or singular-point ODE crossing.
 Publish is DONE; save-point pushes are routine. Any NEW public artifact still asks first.
 
 ## Guards (never violate)

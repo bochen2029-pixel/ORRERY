@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/trace-born.schema.json",
+  "title": "trace-born --json output envelope",
+  "description": "Machine-checkable schema for the trace-born tool's --json output. Matches contracts/trace-born.contract.md v1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "trace-born" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branches", "weights", "redundancy", "regime", "overlap", "phase", "tol", "coh_tol"],
+      "properties": {
+        "branches": { "type": "integer", "minimum": 2, "maximum": 8 },
+        "weights": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "type": "integer", "minimum": 1 } },
+        "redundancy": { "type": "integer", "minimum": 1, "maximum": 24 },
+        "regime": { "type": "string", "enum": ["full", "partial"] },
+        "overlap": { "type": "number", "minimum": 0.0, "maximum": 0.99 },
+        "phase": { "type": "number" },
+        "tol": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "coh_tol": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branches", "weights", "total_M", "redundancy", "regime", "overlap",
+                   "born_max_dev", "oracle_max_dev", "rho_purity", "offdiag_max",
+                   "microbranch_flat_dev", "unitarity_dev", "envariance_residual",
+                   "envariance_break", "flat_dev", "objectivity_dev", "born_reproduced"],
+      "properties": {
+        "branches": { "type": "integer" },
+        "weights": { "type": "array", "items": { "type": "integer" } },
+        "total_M": { "type": "integer" },
+        "redundancy": { "type": "integer" },
+        "regime": { "type": "string", "enum": ["full", "partial"] },
+        "overlap": { "type": "number" },
+        "born_max_dev": { "type": "number", "minimum": 0.0 },
+        "oracle_max_dev": { "type": "number", "minimum": 0.0 },
+        "rho_purity": { "type": "number" },
+        "offdiag_max": { "type": "number", "minimum": 0.0 },
+        "microbranch_flat_dev": { "type": "number", "minimum": 0.0 },
+        "unitarity_dev": { "type": "number", "minimum": 0.0 },
+        "envariance_residual": { "type": "number", "minimum": 0.0 },
+        "envariance_break": { "type": "number", "minimum": 0.0 },
+        "flat_dev": { "type": "number", "minimum": 0.0 },
+        "objectivity_dev": { "type": "number", "minimum": 0.0 },
+        "born_reproduced": { "type": "boolean" }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-BORN-MISMATCH", "G-NOT-DECOHERED"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}
