@@ -1,0 +1,31 @@
+# result.lock — shoot golden (the frozen behavioral anchor)
+
+tool:            shoot
+version:         1.0.0
+result_kind:     golden (determinism anchor + exact quantum-harmonic-oscillator spectrum E_j = j + 1/2 via shooting)
+
+# --- binary / toolchain ---
+binary_blake2b:  7da46aa2d84ec0d876b4c36ee0224b8ccd5c7d99f4d97e07e95b593581490a90
+gpu_arch:        n/a (host-only C++; no GPU kernel)
+gpu_device:      NVIDIA GeForce RTX 4070 Ti SUPER (16376 MiB, driver 610.47) [build host]
+cuda:            13.1 (V13.1.80) [nvcc compiles the host TU]
+host_compiler:   MSVC 2022 (vcvars64)
+build_cmd:       nvcc -O3 -arch=sm_89 shoot.cu ../../lib/envelope.cpp -o shoot.exe
+
+# --- invocation ---
+seed:            0
+params:          potential=harmonic levels=6 xmax=8 length=3.141593 steps=4000 tol=1e-4
+cli:             shoot.exe --potential harmonic --levels 6 --xmax 8 --steps 4000 --tol 1e-4 --seed 0 --json
+
+# --- declared output ---
+declared_blake2b: 9625b268e8629f2400482ea72cde7efe7fae053e37ccc1998f0066957c39954b
+determinism:      byte-identical across 3 --golden runs; ARCH-PORTABLE by construction (declared path is
+                  fp64 +,-,*,/ and sqrt only -- all IEEE correctly-rounded; no transcendentals, no RNG, no atomics)
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f, arrays element-by-element (D-013)
+result:           eigenvalues=[0.5,1.5,2.5,3.5,4.5,5.5] == oracles (E_j=j+1/2), rel_errs all 0 (%.6f), max_rel_err=0;
+                  node_counts=[0,1,2,3,4,5]; G-ORACLE-MISMATCH clear; verdict=pass
+finding:          the shooting solver reproduces the EXACT analytic quantum-harmonic-oscillator ladder E_j = j + 1/2
+                  (and the infinite-square-well spectrum E_j=(j+1)^2 pi^2/2L^2), gated against the closed-form oracle.
+                  The reusable eigenvalue-of-a-linear-operator core (D-032) the leverage suite + TinyUniverse consume.
+run_marker:       ORRERY shoot golden freeze; repo commit = the commit adding this lock
+notes:            Sims prove structure (a differential-operator spectrum), never acquaintance. III-sealed.
