@@ -71,3 +71,26 @@ async background-Monitor mechanism hangs on them).
   - Value of the two-pass: it converted a silent stale-snapshot + an imprecise canon claim into an honest,
     measured record. The cache — the class of feature most prone to silent corruption — was proven
     transparent (a HIT is byte-equal to a fresh run) rather than merely asserted so.
+- 2026-07-13 ~04:27 — **trace-born v1.0.0** (C-TRACE, Wave-1 science gear #2; operator-chosen "next
+  ambitious stuff") landed → commit **`dac00dd`**, pushed (`768a2dd..dac00dd`), snapshot
+  `ORRERY-20260713_042652-dac00dd.bundle`. **The 13th golden-frozen tool.**
+  - What it is: the **Born-from-redundancy** tool — does the normalized-trace weight over a
+    redundancy-defined branch projection reproduce Born `|c_i|²` in a **decohering** finite `S⊗E^R` model
+    (the F15 mechanical core; Zurek envariance + quantum Darwinism)? Brute-force full-state construction +
+    partial trace (the un-shortcut `d^{R+1}` GPU path) cross-checked against the analytic **Gram oracle**
+    (I-11). Extends `algebra`'s cuSOLVER (Dsyevd→**Zheevd**, complex-Hermitian).
+  - Golden `d4e3bf04` (weights 2,3, R=6, full ⇒ Born [0.4,0.6], born_max_dev=0, purity 0.52; det. 3×).
+    Declared witnesses: STEP-A envariance (non-vacuous) + STEP-B fine-graining (`1/√M`). Control: partial
+    decoherence fires both gates + objectivity_dev>0. Selftest 16/16; harness GREEN.
+  - **Honest scope (algebra Part-A discipline):** the one undischarged premise — noncontextual credence =
+    f(local state), science debt **D-BORN** [OPEN/W] (Baker 2007) — is **labeled and excluded**; no "derives
+    Born"; §III-sealed. **Cold two-pass CONFORMANT 11/11, scope honest, no overclaim**
+    (`runs/trace-born_twopass_verify.md`) — verifier adversarially confirmed the two oracle paths are
+    genuinely independent and the control discriminates via an R-sweep. Science-handback delivered
+    (`runs/trace-born_c-trace_handback.md`, F15/D-BORN-facing).
+  - **Process win — measure-first paid off:** the physics was fully de-risked in a numpy prototype
+    (`tools/trace-born/_prototype/born_proto.py`) BEFORE a line of CUDA → the .cu passed **16/16 selftest on
+    the first build**. One bug (a Bash-mangled `cmd /c` quoting) cost one round-trip; the fix was to run the
+    build through the PowerShell tool. One harness gotcha caught + fixed: the MODULE build command must use
+    tool-dir-relative paths (`../../lib/…`), since `harness/verify.py` builds with `cwd=tools/<tool>/`.
+  - Next Wave-1 gear = **`carve`** (Layer-2/P2), the last of the make-or-break trio.
