@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/orrery.schema.json",
+  "title": "orrery --json output envelope",
+  "description": "Machine-checkable schema for the orrery CLI's --json/--golden self-check envelope. Matches contracts/orrery.contract.md v1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "orrery" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chain_tool", "timeout_s"],
+      "properties": {
+        "chain_tool": { "type": "string" },
+        "timeout_s": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chain_tool", "chain_exit_class", "chain_declared_blake2b", "chain_matches_frozen", "verify_ok", "v1_catalogue_complete"],
+      "properties": {
+        "chain_tool": { "type": "string" },
+        "chain_exit_class": { "type": "string", "enum": ["pass", "gate-fired", "error", "timeout"] },
+        "chain_declared_blake2b": { "type": "string" },
+        "chain_matches_frozen": { "type": "boolean" },
+        "verify_ok": { "type": "boolean" },
+        "v1_catalogue_complete": { "type": "boolean" }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-CHAIN-MISMATCH", "G-VERIFY-BROKEN"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}

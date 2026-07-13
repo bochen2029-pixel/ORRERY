@@ -1,0 +1,30 @@
+# result.lock — orrery golden (the frozen behavioral anchor)
+
+tool:            orrery
+version:         1.0.0
+result_kind:     golden (posit-chain self-check: the I-12 chain through the CLI + the R-3 receipt-verifier both ways)
+
+# --- binary / toolchain ---
+binary_blake2b:  1a2d2f22d9468faec2c393c79cf4f3c465e8ef5d0b090010306bc0685da80d7c  (orrery.py source)
+gpu_arch:        n/a (Python CLI surface; no GPU)
+cuda:            n/a
+host:            Python 3.13
+build_cmd:       python -m py_compile orrery.py   (reuses tools/mcp/mcp.py)
+
+# --- invocation ---
+seed:            0
+params:          chain_tool=posit timeout_s=120
+cli:             python orrery.py --golden
+
+# --- declared output ---
+declared_blake2b: 439771854c718fd460a2282c49f763856564c807455c74bc3b25531e289141c0
+determinism:      byte-identical across 3 --golden runs (Python, no RNG, no GPU)
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f (D-013)
+result:           chain_declared_blake2b=7a22dd22... == posit frozen (chain_matches_frozen=true);
+                  verify_ok=true (MATCH on the right hash, MISMATCH on a wrong one); v1_catalogue_complete=true; verdict=pass
+finding:          the ergonomic CLI reproduces the I-12 receipt an agent would cite (run posit --golden -> posit's
+                  frozen declared hash 7a22dd22...), and the R-3 receipt-verifier works both ways -- reusing the vetted
+                  mcp primitives (no reimplemented spawning/hashing; the cold two-pass confirmed zero own subprocess/hashlib).
+                  TinyUniverse R-1 (thin CLI) + R-2 (mcp-register) + R-3 (verify).
+run_marker:       ORRERY orrery golden freeze; repo commit = the commit adding this lock
+notes:            A transport/orchestration CLI surface; computes nothing scientific; III-sealed.
