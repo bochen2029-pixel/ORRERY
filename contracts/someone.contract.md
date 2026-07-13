@@ -1,4 +1,4 @@
-# someone — Contract  v1.1.0
+# someone — Contract  v1.2.0
 
 ## Purpose
 Evolve a population of embodied agents whose recurrent state runs an encoder→bottleneck→decoder→predictor self-model, in a configurable complex world (lights, predators, food, day/night), and measure whether **self-modeling agents (a real bottleneck, k≪N, `pureGap`>0) out-survive/out-reproduce zombie agents (bottleneck bypassed, k=N, gapless)** under stakes (energy depletion, predator death). Tests the functional half of the Someone-Criterion's C2 (gap) and the zombie clause. Seeded from `C:\Users\user\Desktop\DSA\dak_evolution_complex.cu`.
@@ -23,6 +23,7 @@ Evolve a population of embodied agents whose recurrent state runs an encoder→b
 | --csv PATH | path | | off | per-generation series (all replicas) to PATH |
 | --selftest | flag | | off | internal battery; exit 0/1 |
 | --golden | flag | | off | run golden params; hash; exit 0/1 |
+| --oracle | flag | | off | **[v1.2.0]** run the I-11 fp64 CPU-oracle check (fp32 CUDA kernels vs an independent double-precision CPU replica at a tiny config); exit 0 (agree ≤ tol) / 1 (SUSPECT). A validation meta-mode like `--selftest`/`--golden`; emits no declared envelope, does not affect the golden. |
 
 ## Output (result fields)
 | field | type | meaning |
@@ -67,7 +68,25 @@ params: `someone.exe --pop 200 --gens 200 --steps 800 --N 256 --k 64 --zombie-fr
 recorded: `goldens/someone/` (canonical-serialized declared JSON + its blake2b hash + captured stdout). A rewrite must reproduce this hash or supersede it under two-pass review.
 (Note: the golden is a *fast* config — gens 200, steps 800 — so `--golden` runs in well under the CI budget. The science calls larger configs for real experiments; those carry their own `result.lock`.)
 
+## Oracle (I-11 / D-025)
+`someone`'s independent correctness reference is a **double-precision CPU replica** of the GPU sim
+(`resetAgents` + `simulateStep` + `computeFitness`), reusing the SAME genome, environment, RNG (the D-012
+counter-streams) and evolution — differing ONLY in fp64-host vs fp32-device arithmetic. `--oracle` runs
+both paths at a pinned TINY config (pop 16, N 32, k 8, steps 100, **1 generation**, L3, seed 20260712) and
+compares `normal_fit_final` / `zombie_fit_final` / `mean_pure_gap`; agreement within **1e-4** (observed
+~1.2e-7) validates that the CUDA kernels compute the intended arithmetic. One generation isolates the
+per-step + fitness kernels (no evolution chaos), and the short episode avoids death-branching; a kernel
+bug diverges O(1), so `--oracle` exits **1 = SUSPECT** (never a silent fallback). The chaotic long-run
+statistics are pinned separately by the golden (determinism). `--selftest` runs the same check. This
+satisfies the I-11 obligation the founding contract carried as OWED — **D-025, now Active**.
+
 ## Change log
+- **v1.2.0** — 2026-07-12 (MINOR, additive; D-025 adopted Active). Adds the `--oracle` meta-mode: the
+  OWED I-11 fp64 CPU oracle — an independent double-precision CPU replica of the sim, compared to the
+  fp32 CUDA kernels at a tiny 1-generation config (agree to ~1.2e-7 vs a 1e-4 gate). No existing flag,
+  output field, gate, or exit-code changed; `--oracle` emits no declared envelope. The golden `aa5b731d`
+  reproduces **byte-identical** (the oracle is additive; the declared-run path is untouched). `--selftest`
+  gains the same check.
 - v1.1.1 — [BEHAVIOR-NEUTRAL, D-020] internal: RNG kit, blake2b, serializers, reductions, CLI/golden spine migrated to `lib/` (liborrery — itself extracted verbatim FROM this tool and KAT-pinned); no flag, field, gate, or exit-code change; golden `aa5b731d` reproduced bit-identical post-migration (PATCH per semver rules).
 - **v1.1.0** — 2026-07-05 (first implementation; MINOR, additive; see DECISIONS D-009). Adds two additive `result` fields — `win_rate` and `p_value` (one-sided sign test) — so a per-level verdict carries its significance in the declared output (the science's citability bar, D-DAK-RNG; round-01's fatal flaw was N=1/level with no significance). Old v1.0.0 callers are unaffected (superset output). Also (clarifications, non-behavioral): the Determinism section is made RNG-mechanism-neutral to match the impl (host mt19937_64 + stateless counter Gaussian + purpose-keyed splitmix64, no curand — removes the prototype's per-neuron state-writeback race by construction) and the **golden hash domain** is pinned to `{seed,params,result,gates,verdict}`. v1.0.0 was never implemented/frozen (no golden, no caller), so this bump is safe and models correct semver discipline for the template. The golden is frozen at v1.1.0.
 - v1.0.0 — initial contract (founding session, spec-only, unimplemented). Ports dak_evolution_complex.cu to the headless envelope; adds `--ensemble`, `--complexity` enum, `--k` sweepable, deterministic reductions, gates, JSON schema. The round-01 wounded result (strong "advantage grows with complexity" NOT supported; weaker "gap wins in threat/deprivation regimes" stands) is the behavior to reproduce and sharpen with ensembles.

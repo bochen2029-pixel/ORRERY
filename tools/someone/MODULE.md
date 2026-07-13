@@ -75,6 +75,18 @@ cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Bu
 ```
 Then: `.\someone.exe --selftest` · `.\someone.exe --golden` · `.\someone.exe <params> --json`.
 
+## fp64 CPU oracle (I-11 / D-025) — v1.2.0
+`--oracle` runs a faithful **double-precision CPU replica** of the GPU sim (`resetAgents` +
+`simulateStep` + `computeFitness`) — SAME genome/env/RNG/evolution — against the fp32 CUDA kernels at a
+pinned tiny config (pop 16, N 32, k 8, steps 100, **1 generation**, L3, seed 20260712), and gates on the
+max |Δ| of `normal_fit_final` / `zombie_fit_final` / `mean_pure_gap` (tol **1e-4**; observed **~1.2e-7**,
+alive-counts exact). One generation isolates the per-step + fitness kernels (no evolution chaos); the
+short episode avoids death-branching; a kernel bug diverges O(1) → exit **1 = SUSPECT** (never a silent
+fallback). The chaotic long-run statistics are pinned by the golden; the oracle validates the *arithmetic*.
+`--selftest` runs the same check. **Additive:** the golden `aa5b731d` is byte-identical (the declared-run
+path is untouched). Closes the founding contract's OWED I-11 item — the reference the template's
+correctness is judged against, in vivo.
+
 ## Known issues / caveats
 - **F8 viability is a LOOSE C3 carrier** (established.md F8 note): the in-code `viability` proxy anti-correlates with fitness; selection runs through the behavioral-survival (death) channel, not the viability scalar. This tool reports `mean_pure_gap` and survival/alive-counts as the real signal; `avg_viability` appears only in the CSV, not as a headline verdict.
 - Extreme contract configs (e.g. `--pop 8192 --N 1024`) exceed 16 GB device memory (`W` alone is ~34 GB) → a clean CUDA OOM mapped to **exit 2**, never a crash. Realistic science configs fit easily.

@@ -6,7 +6,7 @@ Each tool is a module: one directory, one `MODULE.md`, one contract (in `../cont
 
 | Tool | Lang | Status | Dir |
 |---|---|---|---|
-| **someone** | C++/CUDA | **DONE v1.1.1** (golden `aa5b731d`; det. 3×; **cold two-pass verified** — independent, CONFORMANT; v1.1.1 = liborrery migration, golden bit-identical) | `tools/someone/` |
+| **someone** | C++/CUDA | **DONE v1.2.0** (golden `aa5b731d`; det. 3×; **cold two-pass verified**; v1.2.0 = the OWED I-11 fp64 CPU oracle `--oracle` — fp32 kernels vs an independent fp64 CPU replica agree ~1.2e-7, golden byte-identical, D-025; v1.1.1 = liborrery migration) | `tools/someone/` |
 | ratchet | C++/CUDA | **DONE v1.0.1** (golden `91fce3c4`; det. 3×; MC↔analytic 0.06%; **cold two-pass verified**; v1.0.1 = liborrery migration, golden bit-identical) | `tools/ratchet/` |
 | algebra | C++/CUDA (cuSOLVER) | **DONE v1.0.1** (golden `1526918f`; det. 3×; c=1 validated vs receipt; Part-A scoped; **cold two-pass verified**; v1.0.1 = liborrery migration, golden bit-identical) | `tools/algebra/` |
 | posit | Python | **DONE v1.0.0** (golden `7a22dd22`; det. exact; the Python-is-right tool, D-005; **cold two-pass verified** — CONFORMANT) | `tools/posit/` |

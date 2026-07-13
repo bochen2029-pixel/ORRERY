@@ -28,7 +28,7 @@
 using namespace orrery;
 
 // ------------------------------------------------------------------ version / constants
-static const char* SOMEONE_VERSION = "1.1.1";
+static const char* SOMEONE_VERSION = "1.2.0";
 static const double TIE_BAND = 0.02;      // |delta_fit| below this => tie (contract-fixed)
 static const char* FIREWALL =
     "This measures whether the gap confers fitness (structure); it says nothing about whether "
@@ -41,7 +41,7 @@ struct Params {
     int pop=200, gens=500, steps=1500, N=256, k=-1, ensemble=1, complexity=3;
     double zombie_frac=0.5, mut_rate=0.02, mut_str=0.1;
     long long seed=0; bool seed_set=false;
-    bool json=false, selftest=false, golden=false, csv=false;
+    bool json=false, selftest=false, golden=false, csv=false, oracle=false;
     std::string csv_path;
 };
 static const char* CX_NAME[4] = {"L0","L1","L2","L3"};
@@ -452,6 +452,131 @@ static ReplicaOut run_replica(const Params& P, int replica, std::vector<std::str
     return ro;
 }
 
+// ================================================================== fp64 CPU ORACLE (I-11 / D-025)
+// A faithful DOUBLE-PRECISION CPU replica of the GPU sim (resetAgents + simulateStep + computeFitness),
+// reusing the SAME genome (build_genomes), environment (env_base + dynamics), RNG (counter_*) and
+// evolution as the CUDA path. It is the independent reference the CUDA kernels' correctness is judged
+// against: at a TINY config with FEW generations the fp32-device vs fp64-host divergence stays at
+// floating-point precision (a real kernel bug diverges O(1)), so agreement within a declared tolerance
+// validates the kernels' arithmetic. The chaotic long-run statistics are pinned separately by the golden
+// (determinism). A gate failure here sets run-state SUSPECT — never a silent fallback.
+static ReplicaOut run_replica_cpu_fp64(const Params& P, int replica){
+    const uint64_t rseed=(uint64_t)P.seed+(uint64_t)replica;
+    const int N=P.N,K=P.k,F=2*N+K+8,pop=P.pop,steps=P.steps,gens=P.gens,level=P.complexity;
+    Genomes G; build_genomes(G,P,rseed);                       // SAME genome as the CUDA path
+    std::vector<double> x((size_t)pop*N), delayBuf((size_t)pop*D_DIM*N,0.0);
+    std::vector<int> bufPtr(pop,0), stepCount(pop,0), alive(pop,1);
+    std::vector<double> px(pop),py(pop),ang(pop),spd(pop),energy(pop),predDmg(pop),foodC(pop),
+                        cumLight(pop),cumViab(pop),viab(pop),pureGap(pop),fitness(pop);
+    std::vector<double> s_x(N),s_xDel(N),s_s(K),s_Ds(N),s_Wx(N),s_xPred(N),s_sDrive(N),s_xNext(N),s_feat(F),sens(8);
+    ReplicaOut ro{}; ro.extinctGen=-1;
+    for(int gen=0; gen<gens; gen++){
+        for(int a=0;a<pop;a++){                                // fp64 replica of resetAgents
+            for(int i=0;i<N;i++) x[(size_t)a*N+i]=0.1*counter_gauss(rseed^S_RESET_X,(uint64_t)a,(uint64_t)i,(uint64_t)gen);
+            for(int i=0;i<D_DIM*N;i++) delayBuf[(size_t)a*D_DIM*N+i]=0.0;
+            bufPtr[a]=0;
+            px[a]=10.0+80.0*counter_uniform(rseed^S_RESET_P,(uint64_t)a,0,(uint64_t)gen);
+            py[a]=10.0+80.0*counter_uniform(rseed^S_RESET_P,(uint64_t)a,1,(uint64_t)gen);
+            ang[a]=6.2831853*counter_uniform(rseed^S_RESET_P,(uint64_t)a,2,(uint64_t)gen);
+            spd[a]=0; cumLight[a]=0; cumViab[a]=0; viab[a]=0.5; pureGap[a]=0;
+            stepCount[a]=0; energy[a]=1.0; predDmg[a]=0; foodC[a]=0; alive[a]=1;
+        }
+        Environment e=env_base(rseed,gen,level);
+        for(int step=0; step<steps; step++){
+            if(level>=3){ int cp=step%(NIGHT_FREQ+NIGHT_DURATION); e.isNight=(cp>=NIGHT_FREQ)?1:0; } else e.isNight=0;
+            if(level>=2 && step>0 && step%LIGHT_MOVE_FREQ==0){
+                for(int i=0;i<NUM_LIGHTS;i++){
+                    e.lightX[i]+=((15.0f+70.0f*(float)counter_uniform(rseed^S_LIGHT_MOVE,(uint64_t)gen,(uint64_t)step,(uint64_t)(2*i)))-50.0f)*0.3f;
+                    e.lightY[i]+=((15.0f+70.0f*(float)counter_uniform(rseed^S_LIGHT_MOVE,(uint64_t)gen,(uint64_t)step,(uint64_t)(2*i+1)))-50.0f)*0.3f;
+                    e.lightX[i]=clampf(e.lightX[i],10.0f,90.0f); e.lightY[i]=clampf(e.lightY[i],10.0f,90.0f); } }
+            if(level>=1 && step>0 && step%PRED_MOVE_FREQ==0){
+                for(int i=0;i<NUM_PRED;i++){
+                    e.predX[i]+=((15.0f+70.0f*(float)counter_uniform(rseed^S_PRED_MOVE,(uint64_t)gen,(uint64_t)step,(uint64_t)(2*i)))-50.0f)*0.4f;
+                    e.predY[i]+=((15.0f+70.0f*(float)counter_uniform(rseed^S_PRED_MOVE,(uint64_t)gen,(uint64_t)step,(uint64_t)(2*i+1)))-50.0f)*0.4f;
+                    e.predX[i]=clampf(e.predX[i],10.0f,90.0f); e.predY[i]=clampf(e.predY[i],10.0f,90.0f); } }
+            const uint64_t gstep=(uint64_t)gen*(uint64_t)steps+(uint64_t)step;
+            for(int a=0;a<pop;a++){                             // fp64 replica of simulateStep (one "block")
+                if(!alive[a]) continue;
+                const int isZ=G.isZombie[a]; const int bp=bufPtr[a]; const size_t aN=(size_t)a*N;
+                for(int i=0;i<N;i++){ s_x[i]=x[aN+i]; s_xDel[i]=delayBuf[(size_t)a*D_DIM*N+(size_t)bp*N+i]; }
+                const double pxa=px[a],pya=py[a],anga=ang[a],en=energy[a];
+                double totalLight=0,bestLightDist=1000,bestLightAngle=0;
+                if(e.isNight==0){
+                    for(int i=0;i<NUM_LIGHTS;i++){ double dx=e.lightX[i]-pxa,dy=e.lightY[i]-pya;
+                        double dist=sqrt(dx*dx+dy*dy)+0.01; double light=fmax(0.0,1.0-dist/25.0); totalLight+=light;
+                        if(dist<bestLightDist){ bestLightDist=dist; double toL=atan2(dy,dx); bestLightAngle=toL-anga;
+                            while(bestLightAngle>3.14159)bestLightAngle-=6.28318; while(bestLightAngle<-3.14159)bestLightAngle+=6.28318; } }
+                    cumLight[a]+=totalLight; }
+                double predatorDanger=0,predatorAngle=0;
+                if(e.predatorsActive){
+                    for(int i=0;i<NUM_PRED;i++){ double dx=e.predX[i]-pxa,dy=e.predY[i]-pya; double dist=sqrt(dx*dx+dy*dy)+0.01;
+                        if(dist<15.0){ predatorDanger+=1.0-dist/15.0; if(dist<8.0) predDmg[a]+=0.01*(1.0-dist/8.0);
+                            double away=atan2(-dy,-dx); predatorAngle=away-anga;
+                            while(predatorAngle>3.14159)predatorAngle-=6.28318; while(predatorAngle<-3.14159)predatorAngle+=6.28318; } } }
+                double foodSignal=0,foodAngle=0;
+                for(int i=0;i<NUM_FOOD;i++){ double dx=e.foodX[i]-pxa,dy=e.foodY[i]-pya; double dist=sqrt(dx*dx+dy*dy)+0.01;
+                    if(dist<20.0){ foodSignal=fmax(foodSignal,1.0-dist/20.0);
+                        if(dist<5.0){ energy[a]=fmin(1.0,energy[a]+0.02); foodC[a]+=0.02; }
+                        double toF=atan2(dy,dx); foodAngle=toF-anga;
+                        while(foodAngle>3.14159)foodAngle-=6.28318; while(foodAngle<-3.14159)foodAngle+=6.28318; } }
+                energy[a]-=0.001; if(energy[a]<=0.0 || predDmg[a]>0.5) alive[a]=0;
+                sens[0]=e.isNight?0.0:totalLight; sens[1]=e.isNight?0.0:bestLightAngle/3.14159;
+                sens[2]=predatorDanger; sens[3]=predatorAngle/3.14159; sens[4]=en;
+                sens[5]=foodSignal; sens[6]=foodAngle/3.14159; sens[7]=e.isNight?1.0:0.0;
+                const float* Ec=&G.E[(size_t)a*G.EN]; const float* Dc=&G.Ddec[(size_t)a*G.DN];
+                const float* Wc=&G.W[(size_t)a*G.WN]; const float* Pc=&G.P[(size_t)a*G.PN];
+                const float* Sc=&G.Ws[(size_t)a*G.WsN]; const float* Wm=&G.Wm[(size_t)a*G.WmN];
+                for(int i=0;i<K;i++){ if(isZ){ s_s[i]=(i<N)?s_x[i]:0.0; } else { double sum=0; for(int j=0;j<N;j++) sum+=(double)Ec[(size_t)j*K+i]*s_x[j]; s_s[i]=tanh(sum); } }
+                for(int i=0;i<N;i++){ if(isZ){ s_Ds[i]=s_x[i]; } else { double sum=0; for(int j=0;j<K;j++) sum+=(double)Dc[(size_t)j*N+i]*s_s[j]; s_Ds[i]=sum; } }
+                for(int i=0;i<N;i++){ s_feat[i]=s_x[i]; s_feat[N+i]=s_xDel[i]; }
+                for(int i=0;i<K;i++) s_feat[2*N+i]=s_s[i];
+                for(int i=0;i<8;i++) s_feat[2*N+K+i]=sens[i];
+                for(int i=0;i<N;i++){ double sum=0; for(int j=0;j<N;j++) sum+=(double)Wc[(size_t)j*N+i]*s_x[j]; s_Wx[i]=sum; }
+                for(int i=0;i<N;i++){ double sum=0; for(int j=0;j<F;j++) sum+=(double)Pc[(size_t)j*N+i]*s_feat[j]; s_xPred[i]=sum; }
+                double sumSq=0; for(int i=0;i<N;i++) sumSq+=s_x[i]*s_x[i];
+                const double curNorm=sqrt(sumSq)+1e-10, normErr=3.0-curNorm;
+                for(int i=0;i<N;i++){ double sum=0; for(int j=0;j<8;j++) sum+=(double)Sc[(size_t)j*N+i]*sens[j]; s_sDrive[i]=sum; }
+                const double eta=0.30;
+                for(int i=0;i<N;i++){
+                    double correction=0.15*(tanh(s_xPred[i])-s_x[i]);
+                    double homeo=eta*normErr*s_x[i]/curNorm; homeo=fmax(-0.5,fmin(0.5,homeo));
+                    double noise=counter_gauss(rseed,(uint64_t)a,(uint64_t)i,gstep)*0.02;
+                    s_xNext[i]=tanh(s_Wx[i]+0.08*s_xDel[i]+0.12*s_Ds[i]+correction+s_sDrive[i]+homeo+noise);
+                }
+                double errSum=0,gapSum=0,nextNormSq=0;
+                for(int i=0;i<N;i++){ double d=s_xNext[i]-tanh(s_xPred[i]); errSum+=d*d; double g=s_x[i]-s_Ds[i]; gapSum+=g*g; nextNormSq+=s_xNext[i]*s_xNext[i]; }
+                const double stateNormVal=sqrt(nextNormSq);
+                pureGap[a]=isZ?0.0:fmin(1.0,sqrt(gapSum)/(curNorm+1e-10));   // sqrt(xNormSq)=curNorm (kernel form)
+                const double predErr=sqrt(errSum/N), normDev=stateNormVal-3.0;
+                const double normHealth=exp(-normDev*normDev/1.5), errHealth=exp(-predErr*2.5);
+                viab[a]=fmax(0.0,fmin(1.0,normHealth*errHealth)); cumViab[a]+=viab[a]; stepCount[a]++;
+                for(int i=0;i<N;i++){ x[aN+i]=s_xNext[i]; delayBuf[(size_t)a*D_DIM*N+(size_t)bp*N+i]=s_xNext[i]; }
+                double m0=0,m1=0; for(int j=0;j<N;j++){ double xn=s_xNext[j]; m0+=(double)Wm[j]*xn; m1+=(double)Wm[N+j]*xn; }
+                double motor0=tanh(m0),motor1=tanh(m1);
+                double angn=ang[a]+motor1*0.15, spn=spd[a]*0.9+motor0*2.5*0.1; spn=fmax(-2.0,fmin(3.0,spn));
+                double pxn=px[a]+cos(angn)*spn, pyn=py[a]+sin(angn)*spn;
+                if(pxn<5){pxn=5;spn*=-0.5;} if(pxn>95){pxn=95;spn*=-0.5;} if(pyn<5){pyn=5;spn*=-0.5;} if(pyn>95){pyn=95;spn*=-0.5;}
+                ang[a]=angn; spd[a]=spn; px[a]=pxn; py[a]=pyn; bufPtr[a]=(bp+1)%D_DIM;
+            }
+        }
+        for(int a=0;a<pop;a++){                                 // fp64 replica of computeFitness
+            int st=stepCount[a]; double survival=(double)st/(double)steps;
+            double lightScore=cumLight[a]/(double)(st+1), avgViab=(st>0)?cumViab[a]/st:0.0;
+            double damageScore=1.0-fmin(1.0,predDmg[a]*2.0);
+            fitness[a]=0.25*survival+0.25*lightScore+0.20*foodC[a]+0.15*damageScore+0.15*avgViab;
+        }
+        if(gen==gens-1){
+            double nf=0,zf=0,ng=0; int nn=0,zn=0,na=0,za=0;
+            for(int a=0;a<pop;a++){ if(G.isZombie[a]){ zf+=fitness[a]; zn++; if(alive[a])za++; }
+                                    else { nf+=fitness[a]; ng+=pureGap[a]; nn++; if(alive[a])na++; } }
+            ro.normalMean=nn?nf/nn:0.0; ro.zombieMean=zn?zf/zn:0.0; ro.normalGap=nn?ng/nn:0.0;
+            ro.normalAlive=na; ro.zombieAlive=za;
+        }
+        if(gen<gens-1){ std::vector<float> fitf(pop); for(int a=0;a<pop;a++) fitf[a]=(float)fitness[a]; evolve(G,fitf,P,rseed,gen); }
+    }
+    return ro;
+}
+
 // ------------------------------------------------------------------ aggregate replicas -> Result
 static Result aggregate(const Params& P, const std::vector<ReplicaOut>& reps){
     int E = (int)reps.size();
@@ -587,6 +712,37 @@ static int run_golden(){
     return golden_check("someone", declared_object(P,R,verdict), full_envelope(P,R,verdict));
 }
 
+// ------------------------------------------------------------------ oracle (I-11 / D-025): fp64 CPU vs CUDA
+// Pinned TINY config, ONE generation (no evolution -> isolates the per-step kernel + fitness arithmetic;
+// short episode -> death is rare, no trajectory branching). fp32-device vs fp64-host should agree to fp
+// precision; a real kernel bug diverges O(1).
+static Params oracle_params(){
+    Params P; P.pop=16; P.N=32; P.k=8; P.steps=100; P.gens=1; P.ensemble=1; P.complexity=3;
+    P.zombie_frac=0.5; P.mut_rate=0.02; P.mut_str=0.1; P.seed=20260712; P.seed_set=true; return P;
+}
+static const double ORACLE_TOL = 1e-4;   // fp32-device vs fp64-host over 100 steps, gens=1 (observed ~1.2e-7;
+                                         // ~10^3x margin catches O(1) kernel bugs, safe vs driver last-ULP drift)
+static double oracle_maxdiff(ReplicaOut& cuda, ReplicaOut& cpu){
+    Params P=oracle_params();
+    cuda = run_replica(P,0,nullptr);        // the CUDA path (fp32 kernels)
+    cpu  = run_replica_cpu_fp64(P,0);       // the independent fp64 CPU reference
+    double dN=fabs(cuda.normalMean-cpu.normalMean), dZ=fabs(cuda.zombieMean-cpu.zombieMean), dG=fabs(cuda.normalGap-cpu.normalGap);
+    return fmax(dN,fmax(dZ,dG));
+}
+static int run_oracle(){
+    ReplicaOut cuda{},cpu{}; double mx=oracle_maxdiff(cuda,cpu);
+    fprintf(stderr,"someone --oracle: fp64 CPU replica vs the CUDA kernels (I-11 correctness reference, D-025)\n");
+    fprintf(stderr,"  config: pop16 N32 k8 steps100 gens1 L3 seed20260712 (tiny, 1 gen -> fp32-vs-fp64 stays at fp precision)\n");
+    fprintf(stderr,"  normal_fit_final : cuda %.8f  cpu_fp64 %.8f  |d| %.2e\n",cuda.normalMean,cpu.normalMean,fabs(cuda.normalMean-cpu.normalMean));
+    fprintf(stderr,"  zombie_fit_final : cuda %.8f  cpu_fp64 %.8f  |d| %.2e\n",cuda.zombieMean,cpu.zombieMean,fabs(cuda.zombieMean-cpu.zombieMean));
+    fprintf(stderr,"  mean_pure_gap    : cuda %.8f  cpu_fp64 %.8f  |d| %.2e\n",cuda.normalGap,cpu.normalGap,fabs(cuda.normalGap-cpu.normalGap));
+    fprintf(stderr,"  alive n/z        : cuda %.0f/%.0f  cpu_fp64 %.0f/%.0f\n",cuda.normalAlive,cuda.zombieAlive,cpu.normalAlive,cpu.zombieAlive);
+    bool ok = mx<=ORACLE_TOL;
+    fprintf(stderr,"  max|d| %.3e  tol %.1e  ->  %s\n", mx, ORACLE_TOL,
+            ok?"ORACLE OK (CUDA kernels validated against the fp64 reference)":"ORACLE SUSPECT (CUDA diverges from fp64 beyond tolerance)");
+    return ok?0:1;   // exit 1 = SUSPECT (never a silent fallback)
+}
+
 // ------------------------------------------------------------------ selftest (st_check from lib)
 // small fast config for the sim-based selftests (keeps --selftest well under 30 s)
 static Params small_params(){
@@ -626,6 +782,9 @@ static int run_selftest(){
     // 6. counter-RNG determinism (host)
     ok &= st_check("counter_gauss deterministic",
         counter_gauss(123,4,5,6)==counter_gauss(123,4,5,6));
+    // 7. fp64 CPU oracle (I-11 / D-025): the CUDA kernels agree with the independent fp64 reference (tiny cfg)
+    { ReplicaOut c{},g{}; double mx=oracle_maxdiff(c,g);
+      ok &= st_check("fp64 CPU oracle agrees with CUDA kernels (max|d| < tol)", mx<=ORACLE_TOL); }
     fprintf(stderr, ok?"SELFTEST PASS\n":"SELFTEST FAIL\n");
     return ok?0:1;
 }
@@ -656,10 +815,12 @@ int main(int argc, char** argv){
         else if(a=="--csv"){      P.csv=true; P.csv_path=val("--csv"); }
         else if(a=="--selftest")  P.selftest=true;
         else if(a=="--golden")    P.golden=true;
+        else if(a=="--oracle")    P.oracle=true;
         else die2("unknown flag: "+a);
     }
     if(P.selftest) return run_selftest();
     if(P.golden)   return run_golden();
+    if(P.oracle)   return run_oracle();
 
     // resolve k default
     if(!k_set) P.k = P.N/4;
