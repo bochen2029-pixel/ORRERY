@@ -73,7 +73,7 @@ async background-Monitor mechanism hangs on them).
     transparent (a HIT is byte-equal to a fresh run) rather than merely asserted so.
 - 2026-07-13 ~04:27 — **trace-born v1.0.0** (C-TRACE, Wave-1 science gear #2; operator-chosen "next
   ambitious stuff") landed → commit **`dac00dd`**, pushed (`768a2dd..dac00dd`), snapshot
-  `ORRERY-20260713_042652-dac00dd.bundle`. **The 13th golden-frozen tool.**
+  `ORRERY-20260713_042652-dac00dd.bundle`. **The 12th golden-frozen tool** (13th contract; hsmi-stab is parked, no golden).
   - What it is: the **Born-from-redundancy** tool — does the normalized-trace weight over a
     redundancy-defined branch projection reproduce Born `|c_i|²` in a **decohering** finite `S⊗E^R` model
     (the F15 mechanical core; Zurek envariance + quantum Darwinism)? Brute-force full-state construction +
