@@ -1,0 +1,33 @@
+# result.lock — lens bhshadow-geo golden (v1.1.0: the geodesic-DERIVED shadow)
+
+tool:            lens
+version:         1.1.0
+result_kind:     golden (v1.1.0 additive MINOR; shadow DERIVED by null-geodesic integration; triple-validated vs silhouette + OptiX)
+
+# --- binary / toolchain ---
+binary_blake2b:  4fc5ba3efc841024387ae17892ca140e69cc5d8d7d44b00a1db5618ecb7eb1bd
+gpu_arch:        sm_89
+gpu_device:      NVIDIA GeForce RTX 4070 Ti SUPER (16376 MiB, driver 610.47)
+optix:           9.1.0
+cuda:            13.1 (V13.1.80)
+host_compiler:   MSVC 2022 (vcvars64)
+build_cmd:       nvcc -ptx lens_device.cu -> python embed_ptx.py -> nvcc lens.cu ../../lib/envelope.cpp -lcuda -ladvapi32  (MODULE.md)
+
+# --- invocation ---
+seed:            0
+params:          scene=bhshadow-geo mass=1.0 width=1024 height=1024 engine=both extent=7.794229 tol_oracle=0.011719 tol_rt_px=64
+cli:             lens.exe --scene bhshadow-geo --mass 1.0 --width 1024 --height 1024 --engine both --seed 0 --json
+
+# --- declared output ---
+declared_blake2b: 914399280d805f8ab78bab230fc865a025ae1de6d7b75cf3ab6c05b627f63ce8
+determinism:      byte-identical across 3 --golden runs on sm_89 + OptiX 9.1.0 + driver 610.47
+                  (no RNG; geodesic classifier = pure fp64 +,-,*,/ + compares -> IEEE-deterministic + arch-portable; captured count = integer atomic)
+hash_domain:      canonical JSON of {seed,params,result,gates,verdict}, floats %.6f (D-013)
+result:           hit_pixels=366012 (geodesic-DERIVED) == hit_pixels_rt=366012 (OptiX silhouette), rt_baseline_delta=0, rt_agrees=1;
+                  area_measured=84.820667 vs oracle 27 pi M^2 = 84.823002, area_rel_err=2.8e-5;
+                  G-ORACLE-MISMATCH clear; G-RT-DIVERGE clear; verdict=pass
+finding:          the shadow DERIVED by integrating real Schwarzschild null geodesics (Binet u''=-u+3Mu^2) equals the analytic
+                  b_crit=sqrt(27) M silhouette AND the OptiX render, pixel-for-pixel (triple agreement) -- closing the loop on
+                  v1.0.0's hard-coded silhouette. The RT-cores-as-compute speedup is RETIRED (D-030). v1.0.0 golden 11e545b8 unchanged.
+run_marker:       ORRERY lens v1.1.0 bhshadow-geo golden freeze; repo commit = the commit adding this lock
+notes:            Sims prove structure (a geometric cross-section / shadow), never acquaintance. III-sealed.

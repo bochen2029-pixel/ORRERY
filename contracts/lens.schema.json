@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://finaltheoryofeverything.org/orrery/contracts/lens.schema.json",
   "title": "lens --json output envelope",
-  "description": "Machine-checkable schema for the lens tool's --json output. Matches contracts/lens.contract.md v1.0.0.",
+  "description": "Machine-checkable schema for the lens tool's --json output. Matches contracts/lens.contract.md v1.1.0 (the declared field-set is unchanged from v1.0.0; only the scene enum adds 'bhshadow-geo').",
   "type": "object",
   "additionalProperties": false,
   "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
@@ -15,7 +15,7 @@
       "additionalProperties": false,
       "required": ["scene", "radius", "mass", "width", "height", "extent", "engine", "tol_oracle", "tol_rt_px"],
       "properties": {
-        "scene": { "type": "string", "enum": ["sphere", "bhshadow"] },
+        "scene": { "type": "string", "enum": ["sphere", "bhshadow", "bhshadow-geo"] },
         "radius": { "type": "number", "exclusiveMinimum": 0.0 },
         "mass": { "type": "number", "exclusiveMinimum": 0.0 },
         "width": { "type": "integer", "minimum": 16, "maximum": 8192 },
@@ -33,7 +33,7 @@
                    "hit_pixels", "hit_fraction", "area_measured", "area_oracle", "area_rel_err",
                    "engine", "hit_pixels_rt", "rt_baseline_delta", "rt_agrees"],
       "properties": {
-        "scene": { "type": "string", "enum": ["sphere", "bhshadow"] },
+        "scene": { "type": "string", "enum": ["sphere", "bhshadow", "bhshadow-geo"] },
         "silhouette_radius": { "type": "number", "exclusiveMinimum": 0.0 },
         "image_extent": { "type": "number", "exclusiveMinimum": 0.0 },
         "width": { "type": "integer" },

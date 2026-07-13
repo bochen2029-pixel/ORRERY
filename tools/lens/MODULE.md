@@ -1,4 +1,4 @@
-# MODULE — `lens` (v1.0.0)
+# MODULE — `lens` (v1.1.0)
 
 **Purpose.** ORRERY's RT-core renderer + oracle-gated geometric-measurement tool. It renders a
 parameterized *physics-scene silhouette* with **OptiX** (hardware ray tracing) and measures its
@@ -76,14 +76,17 @@ artifacts (gitignored); the build regenerates them.
   blake2b `11e545b8…6766a2b`; reproduced byte-identical ≥3× on the pin. `area_rel_err ≈ 2.8e-5`;
   `hit_pixels_rt = hit_pixels = 366012`, `rt_baseline_delta = 0`. See `goldens/lens/NOTE.md`.
 
-## Known issues / scope (honest, v1.0.0)
-- **Render-only** (D-004): no curved-geodesic render; the geodesic + RT-speedup experiment is the
-  pre-registered SPIKE (contract). No speedup is claimed.
+## Known issues / scope (honest, v1.1.0)
+- **v1.1.0 `bhshadow-geo` (D-031)** graduates the D-030 SPIKE baseline: the shadow is **derived** by
+  integrating null geodesics (Binet RK4, GPU fp64, pinned φ-steps) rather than hard-coded, cross-checked
+  against the OptiX silhouette (I-13) with a lensed `--render`. The RT-**as-compute** speedup stays
+  RETIRED (measured, D-030) — RT is the render + cross-check, never claimed as an accelerator.
+  `bhshadow-geo` needs a GPU even with `--engine baseline` (the geodesic integration is a CUDA kernel).
 - **RT arm is toolchain-pinned** (in the golden). A driver/OptiX/arch change can drift `hit_pixels_rt`;
   re-baseline is operator-signed (`goldens/lens/NOTE.md`). `--engine baseline` gives the
   driver-independent physics if only the RT arm drifts.
 - **Orthographic only** in v1 (clean exact oracle). A perspective/celestial-backdrop pretty render and
   finite-observer Synge shadow are candidate MINORs.
 - **`--csv`** writes a single summary row (no per-step series in v1).
-- Scenes limited to `sphere` (calibration) + `bhshadow`. More scenes (light-cone mesh, isosurfaces)
-  are additive MINORs.
+- Scenes: `sphere` (calibration) + `bhshadow` (silhouette) + `bhshadow-geo` (geodesic-derived). More
+  scenes (light-cone mesh, isosurfaces) and a finite-observer Synge shadow are additive MINORs.

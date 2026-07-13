@@ -59,5 +59,20 @@ If only the RT arm drifts, re-run with `--engine baseline` to confirm the physic
 Recorded in `runs/lens_golden.result.lock` (tool semver, binary blake2b, sm_89 + device, OptiX/CUDA
 versions, host compiler, exact CLI, declared hash, git commit).
 
+## v1.1.0 second golden — `bhshadow-geo` (the geodesic-derived shadow, D-031)
+Additive MINOR: a second golden in its OWN hash file, so the v1.0.0 golden above stays byte-identical.
+```
+lens.exe --scene bhshadow-geo --mass 1.0 --width 1024 --height 1024 --engine both --seed 0 --json
+```
+- `declared_geo.hash` = `914399280d805f8ab78bab230fc865a025ae1de6d7b75cf3ab6c05b627f63ce8` (+ `stdout_geo.txt`).
+- `lens --golden` checks **both** goldens (v1.0.0 `11e545b8…` + v1.1.0 `914399…`) and exits 0 iff both reproduce.
+- **What it proves:** the shadow DERIVED by integrating real Schwarzschild null geodesics (the Binet
+  equation, GPU fp64, pinned φ-steps) equals the analytic silhouette AND the OptiX render — triple
+  agreement: `hit_pixels = 366012` (geodesic) = `hit_pixels_rt = 366012` (OptiX b_crit silhouette),
+  `area_rel_err ≈ 2.8e-5` vs 27π M². Reproduced byte-identical ≥3× on the pin below.
+- **Determinism:** the geodesic classifier is pure fp64 `+,−,*,/`/compares (no transcendentals) →
+  IEEE-deterministic + arch-portable; the captured count is an integer atomic. Same toolchain pin
+  (sm_89 + OptiX 9.1.0 + driver 610.47) applies to `hit_pixels_rt` (the OptiX cross-check arm).
+
 ## Re-baseline record
-- (none yet — v1.0.0 freeze on the pin above.)
+- (none yet — v1.0.0 `11e545b8` + v1.1.0 `914399` frozen on the pin above.)

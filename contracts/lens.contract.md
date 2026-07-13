@@ -1,4 +1,4 @@
-# lens — Contract  v1.0.0
+# lens — Contract  v1.1.0
 
 ## Purpose (what it measures)
 
@@ -7,38 +7,43 @@ parameterized *physics-scene silhouette* with OptiX (hardware ray tracing on the
 and measures the silhouette's **projected cross-section** by orthographic ray casting. The declared
 measurement is computed by an **analytic baseline** (pure arithmetic — the deterministic golden
 anchor and the I-11 oracle) and independently by the **OptiX RT path**, which must agree with the
-baseline within a pre-registered pixel tolerance (I-13 paired-oracle). The two shipped scenes have
+baseline within a pre-registered pixel tolerance (I-13 paired-oracle). The shipped scenes have
 exact closed-form cross-sections:
 
 - `sphere` — a sphere of radius `R`; oracle cross-section **π R²** (a calibration/known-answer scene).
 - `bhshadow` — the Schwarzschild **photon-capture shadow**: the capture region is the disk of the
   critical impact parameter `b_crit = 3√3·M = √27·M`; oracle capture cross-section **σ = 27π M²**
-  (M in geometric units G = c = 1). This is the genuinely relativistic, citable number.
+  (M in geometric units G = c = 1) — the *known* hard-edged silhouette (v1.0.0).
+- `bhshadow-geo` (v1.1.0) — the **same** Schwarzschild shadow, but **DERIVED by integrating actual
+  null geodesics** (the Binet equation `u'' = −u + 3M u²`, u = 1/r) instead of the hard-coded
+  silhouette. Same oracle (**27π M²**); the geodesic-derived captured count is cross-checked against
+  the OptiX `b_crit` silhouette (I-13). `--render` produces the gravitationally-lensed black-hole image
+  (photon ring + celestial-background lensing). This is the graduated compute-SPIKE baseline (D-030).
 
-**Honest scope (D-004, binding).** `lens` v1 **renders geometry**; it does **not** integrate curved
-null geodesics. It draws the *known* hard-edged capture boundary at `b_crit` and measures its area
-against the exact GR oracle. The geodesic-integrated (light-bending) render, and any claim that RT
-cores *accelerate* that integration, are the **pre-registered compute-SPIKE** (see "Parked SPIKE"
-below) — measured later, never asserted here. The RT path in v1 is used only for the render and as
-the I-13 cross-check of the baseline; `lens` makes **no speedup claim**.
+**Scope (D-004 / D-030).** `sphere`/`bhshadow` draw the *known* silhouette; `bhshadow-geo` **derives**
+it from the metric (closing the loop on the hard-coded `b_crit`). The RT-cores-**as-compute** question
+(do RT cores *accelerate* the geodesic integration?) was the pre-registered SPIKE (see "Parked SPIKE"
+below): **measured and RETIRED** — ~10× slower than the fp64 baseline at matched accuracy (D-030). So
+the OptiX RT path is used only for the render and the I-13 silhouette cross-check; `lens` makes **no
+speedup claim**.
 
-`lens` measures geometric/optical **structure** (cross-sections, silhouettes) only. It makes no
-acquaintance/qualia claim (§III-sealed).
+`lens` measures geometric/optical **structure** (cross-sections, silhouettes, shadows) only. It makes
+no acquaintance/qualia claim (§III-sealed).
 
 ## CLI
 
 | flag | type | range | default | meaning |
 |---|---|---|---|---|
-| --scene | enum | {sphere, bhshadow} | sphere | which physics scene to render/measure |
+| --scene | enum | {sphere, bhshadow, bhshadow-geo} | sphere | which physics scene. `bhshadow` = hard-coded `b_crit` silhouette (v1.0.0); `bhshadow-geo` = the shadow **DERIVED by null-geodesic integration** (v1.1.0, GPU) with the OptiX silhouette as the I-13 cross-check |
 | --radius | double | > 0 | 1.0 | `sphere`: sphere radius R (world units). Ignored for `bhshadow`. |
-| --mass | double | > 0 | 1.0 | `bhshadow`: black-hole mass M (geometric units); silhouette radius = √27·M. Ignored for `sphere`. |
+| --mass | double | > 0 | 1.0 | `bhshadow`/`bhshadow-geo`: black-hole mass M (geometric units); silhouette radius = √27·M. Ignored for `sphere`. |
 | --width | int | 16 … 8192 | 1024 | raster width (pixels) |
 | --height | int | 16 … 8192 | 1024 | raster height (pixels) |
 | --extent | double | > silhouette_radius | 1.5 × silhouette_radius | orthographic half-extent of the square image plane (world units). Must strictly exceed the silhouette radius or the run is an error (exit 2). |
-| --engine | enum | {baseline, both} | both | compute path. `baseline` = analytic CPU path only (no GPU; the portable, driver-independent anchor). `both` = CPU baseline (the declared anchor + I-11 oracle) **and** the OptiX RT path (cross-check via the I-13 agreement gate; requires a working OptiX device + sm_89). The **declared** `hit_pixels`/`area_*` always come from the baseline; RT adds `hit_pixels_rt`. |
+| --engine | enum | {baseline, both} | both | compute path. `baseline` = analytic CPU path only (no GPU; the portable, driver-independent anchor). `both` = CPU baseline (the declared anchor + I-11 oracle) **and** the OptiX RT path (cross-check via the I-13 agreement gate; requires a working OptiX device + sm_89). The **declared** `hit_pixels`/`area_*` always come from the baseline; RT adds `hit_pixels_rt`. For `bhshadow-geo` the baseline IS the fp64 CUDA geodesic integration (GPU; pure arithmetic, deterministic) and the RT arm is the OptiX `b_crit` silhouette used as the I-13 cross-check — so `bhshadow-geo` needs a GPU even with `--engine baseline`. |
 | --tol-oracle | double | ≥ 0 | max(1e-3, 8·extent /(width·silhouette_radius)) | relative-error gate on the measured vs. oracle cross-section (resolution-aware default bounds the O(1/width) pixel-discretization error) |
 | --tol-rt-px | int | ≥ 0 | 64 | max \|hit_pixels_rt − hit_pixels\| before G-RT-DIVERGE fires |
-| --render PATH | path | | off | **opt-in, NON-DECLARED** (Invariant 3): write a binary PPM (P6) image of the shaded silhouette to PATH. Never affects the declared object; never blocks. |
+| --render PATH | path | | off | **opt-in, NON-DECLARED** (Invariant 3): write a binary PPM (P6) image to PATH — the shaded silhouette (`sphere`/`bhshadow`) or the gravitationally-lensed black-hole image (`bhshadow-geo`). Never affects the declared object; never blocks. |
 | --seed | int | ≥ 0 | 0 | RNG seed — **reserved**; `lens` uses no RNG (deterministic by construction). Echoed for envelope uniformity. |
 | --json | flag | | off | emit the JSON envelope on stdout |
 | --csv PATH | path | | off | (reserved; no per-row series in v1.0.0 — flag accepted, writes a single summary row) |
@@ -49,13 +54,13 @@ acquaintance/qualia claim (§III-sealed).
 
 | field | type | meaning |
 |---|---|---|
-| scene | string | resolved scene name (`sphere` \| `bhshadow`) |
+| scene | string | resolved scene name (`sphere` \| `bhshadow` \| `bhshadow-geo`) |
 | silhouette_radius | double | exact silhouette radius: R (sphere) or √27·M (bhshadow), world units |
 | image_extent | double | resolved orthographic half-extent |
 | width | int | raster width |
 | height | int | raster height |
 | total_pixels | int | width × height |
-| hit_pixels | int | primary rays intersecting the geometry — **analytic baseline** (deterministic integer) |
+| hit_pixels | int | captured/hit primary rays — the **baseline**: analytic disk test (`sphere`/`bhshadow`) or **null-geodesic capture classification** (`bhshadow-geo`); deterministic integer |
 | hit_fraction | double | hit_pixels / total_pixels |
 | area_measured | double | hit_fraction × (2·extent)² — measured projected cross-section (world units²) |
 | area_oracle | double | exact analytic cross-section: π R² (sphere) or 27π M² (bhshadow) |
@@ -95,6 +100,10 @@ floats `%.6f` with −0 normalization; tool/version/notes excluded), blake2b-256
   (RTX 4070 Ti SUPER) + OptiX 9.1.0 + driver 610.47 — measured byte-identical across ≥3 runs. It is
   toolchain-pinned like every CUDA golden; a driver/OptiX/arch change may shift it and requires an
   operator-signed re-baseline (`goldens/lens/NOTE.md`), exactly the sm_89-pin protocol used elsewhere.
+- The **geodesic** baseline (`bhshadow-geo`) uses only fp64 `+,−,*,/` and comparisons in the classifier
+  (no transcendentals), with a pinned φ-step count (6000 steps, dφ=0.004) — IEEE-deterministic and
+  arch-portable; the captured count is an integer atomic (order-independent). The lensed `--render` uses
+  transcendentals but is NON-declared.
 - No fast-math (D-021/I-13): the OptiX-IR/PTX and host are compiled without `--use_fast_math`.
 - `--render` output, wall-clock timings, and the RT-vs-baseline wall-time (the SPIKE's future input)
   are NON-declared and excluded from the golden.
@@ -107,6 +116,12 @@ recorded: `goldens/lens/` (declared.hash + captured stdout + NOTE.md with the to
 
 Expected physics (informative, not the hash): `area_oracle = 27π ≈ 84.823002`; `area_rel_err ≲ 3e-4`;
 `rt_agrees = 1`. The hash covers the exact declared integers/floats.
+
+**v1.1.0 second golden** (additive — the v1.0.0 golden above is UNCHANGED, in its own hash file):
+params: `--scene bhshadow-geo --mass 1.0 --width 1024 --height 1024 --engine both --seed 0 --json`
+recorded: `goldens/lens/declared_geo.hash` (+ `stdout_geo.txt`). `--golden` checks **both** goldens and
+exits 0 iff both reproduce. Triple-validation: `hit_pixels = 366012` (geodesic-derived) =
+`hit_pixels_rt = 366012` (OptiX silhouette), `area_rel_err ≈ 2.8e-5` vs 27π M².
 
 ## Parked SPIKE (D-004 — pre-registered, NOT claimed in v1)
 
@@ -138,3 +153,8 @@ baseline itself validated and is a candidate v1.1.0 MINOR. Memo: `runs/lens_spik
   compute-SPIKE was RUN and **RETIRED** (measured ~10× loss at matched accuracy; D-030,
   `runs/lens_spike_geodesic.md`). The fp64 geodesic baseline validated (derives 27π M² from the metric)
   and is a candidate v1.1.0 MINOR. See the RESOLUTION note in "Parked SPIKE" above.
+- v1.1.0 (2026-07-12) — **MINOR, additive**: new scene `bhshadow-geo` graduating the D-030 geodesic
+  baseline — DERIVES the shadow by null-geodesic integration (GPU fp64), cross-checked against the OptiX
+  silhouette (I-13) + the lensed `--render`. No existing flag, output field, or exit-code changed; the
+  v1.0.0 declared schema and golden `11e545b8` reproduce byte-identical (old callers unaffected). Second
+  golden `914399…` frozen (`goldens/lens/declared_geo.hash`); `--golden` now checks both.

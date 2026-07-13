@@ -28,14 +28,15 @@
 #include "lens_device_ptx.h"      // generated: LENS_DEVICE_PTX / LENS_DEVICE_PTX_len (embed_ptx.py)
 using namespace orrery;
 
-static const char* LENS_VERSION = "1.0.0";
+static const char* LENS_VERSION = "1.1.0";
 static const char* FIREWALL =
-    "This measures the geometric cross-section of a physics-scene silhouette (structure/optics); "
-    "it says nothing about whether anything feels (acquaintance) - III-sealed. Honest scope (D-004): "
-    "renders geometry, does NOT integrate curved null geodesics; the geodesic render and any RT "
-    "speedup claim are the pre-registered compute-SPIKE, not asserted here.";
+    "This measures the geometric cross-section of a physics-scene shadow (structure/optics); it says "
+    "nothing about whether anything feels (acquaintance) - III-sealed. Scope (D-004/D-030): the "
+    "bhshadow-geo scene DERIVES the shadow by integrating null geodesics; the RT-cores-as-compute "
+    "speedup was measured and RETIRED (~10x slower at matched accuracy), so RT is used only for the "
+    "render and the I-13 silhouette cross-check.";
 
-static const double PI     = 3.14159265358979323846;
+#define PI 3.14159265358979323846
 static const double SQRT27 = 5.19615242270663188058;   // 3*sqrt(3) = sqrt(27) = b_crit / M
 
 // ------------------------------------------------------------------ params / result
@@ -89,6 +90,106 @@ static long long baseline_hits(const Params& P, std::vector<unsigned char>* buf)
         }
     }
     return hits;
+}
+
+// ------------------------------------------------------------------ geodesic baseline (v1.1.0: scene bhshadow-geo)
+// DERIVES the shadow by integrating REAL Schwarzschild null geodesics (Binet: u'' = -u + 3M u^2, u=1/r)
+// instead of the hard-coded silhouette. The classifier uses only fp64 +,-,*,/ and comparisons (no
+// transcendentals) -> IEEE-deterministic + arch-portable; the captured count is an integer atomic.
+// Integration constants are PINNED (not declared params -> the declared schema is identical to v1.0.0,
+// so the sphere/bhshadow golden is byte-identical). D-030 SPIKE graduation seed: tools/lens/_spike_geodesic/.
+static const double GEO_DPHI  = 0.004;   // phi-step (fixed)
+static const int    GEO_STEPS = 6000;    // max phi-steps (fixed)
+
+__device__ int lens_integrate_capture(double b, double M, double dphi, int maxsteps){
+    if(b <= 1e-9) return 1;                       // dead-center ray plunges in
+    double u=0.0, w=1.0/b; const double uh=1.0/(2.0*M);
+    for(int s=0;s<maxsteps;++s){                  // RK4 on (u'=w, w'=-u+3M u^2)
+        double k1u=w,               k1w=-u+3.0*M*u*u;
+        double u2=u+0.5*dphi*k1u,   w2=w+0.5*dphi*k1w;   double k2u=w2, k2w=-u2+3.0*M*u2*u2;
+        double u3=u+0.5*dphi*k2u,   w3=w+0.5*dphi*k2w;   double k3u=w3, k3w=-u3+3.0*M*u3*u3;
+        double u4=u+dphi*k3u,       w4=w+dphi*k3w;       double k4u=w4, k4w=-u4+3.0*M*u4*u4;
+        u += (dphi/6.0)*(k1u+2.0*k2u+2.0*k3u+k4u);
+        w += (dphi/6.0)*(k1w+2.0*k2w+2.0*k3w+k4w);
+        if(u >= uh)  return 1;                    // crossed horizon -> captured (the shadow)
+        if(w <= 0.0) return 0;                    // turning point -> escapes
+    }
+    return (u > 1.0/(3.0*M)) ? 1 : 0;             // near the separatrix (measure zero)
+}
+
+// captured-count over the orthographic extent grid (impact parameter b = sqrt(u^2+v^2)) — the declared baseline.
+__global__ void lens_geo_capture_kernel(int W,int H,double extent,double M,double dphi,int maxsteps,unsigned int* cap){
+    int x=blockIdx.x*blockDim.x+threadIdx.x, y=blockIdx.y*blockDim.y+threadIdx.y;
+    if(x>=W||y>=H) return;
+    double u=extent*(2.0*(x+0.5)/W-1.0), v=extent*(2.0*(y+0.5)/H-1.0);
+    if(lens_integrate_capture(sqrt(u*u+v*v),M,dphi,maxsteps)==1) atomicAdd(cap,1u);
+}
+static long long geodesic_hits(const Params& P){
+    const int W=P.width,H=P.height;
+    unsigned int* dcap=nullptr; CUDA_OK(cudaMalloc((void**)&dcap,sizeof(unsigned int)));
+    CUDA_OK(cudaMemset(dcap,0,sizeof(unsigned int)));
+    dim3 blk(16,16), grd((W+15)/16,(H+15)/16);
+    lens_geo_capture_kernel<<<grd,blk>>>(W,H,P.extent,P.mass,GEO_DPHI,GEO_STEPS,dcap);
+    CUDA_OK(cudaGetLastError()); CUDA_OK(cudaDeviceSynchronize());
+    unsigned int cap=0; CUDA_OK(cudaMemcpy(&cap,dcap,sizeof(unsigned int),cudaMemcpyDeviceToHost));
+    cudaFree(dcap);
+    return (long long)cap;
+}
+
+// ---- the lensed render (NON-DECLARED, Invariant 3): finite observer; escaped rays -> lensed celestial checker ----
+struct V3 { double x,y,z; };
+__host__ __device__ inline V3 v3(double x,double y,double z){ V3 r{x,y,z}; return r; }
+__host__ __device__ inline V3 vadd(V3 a,V3 b){ return v3(a.x+b.x,a.y+b.y,a.z+b.z); }
+__host__ __device__ inline V3 vsub(V3 a,V3 b){ return v3(a.x-b.x,a.y-b.y,a.z-b.z); }
+__host__ __device__ inline V3 vmul(V3 a,double s){ return v3(a.x*s,a.y*s,a.z*s); }
+__host__ __device__ inline double vdot(V3 a,V3 b){ return a.x*b.x+a.y*b.y+a.z*b.z; }
+__host__ __device__ inline V3 vcross(V3 a,V3 b){ return v3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x); }
+__host__ __device__ inline double vlen(V3 a){ return sqrt(vdot(a,a)); }
+__host__ __device__ inline V3 vnorm(V3 a){ double l=vlen(a); return l>1e-300?vmul(a,1.0/l):a; }
+
+__global__ void lens_geo_render_kernel(int W,int H,V3 C,V3 fwd,V3 right,V3 up,double tanhalf,
+                                       double M,double dphi,int maxsteps,double r_esc,unsigned char* img){
+    int px=blockIdx.x*blockDim.x+threadIdx.x, py=blockIdx.y*blockDim.y+threadIdx.y;
+    if(px>=W||py>=H) return;
+    double sx=(2.0*(px+0.5)/W-1.0)*tanhalf*(double)W/H, sy=(2.0*(py+0.5)/H-1.0)*tanhalf;
+    V3 D0=vnorm(vadd(vadd(fwd,vmul(right,sx)),vmul(up,sy))), P0=C;
+    double r0=vlen(P0); V3 er=vnorm(P0); double d_r=vdot(D0,er);
+    V3 ephi=vsub(D0,vmul(er,d_r)); double el=vlen(ephi);
+    unsigned char R=0,G=0,B=0;
+    if(el<1e-9){ if(d_r>=0.0){ R=8;G=10;B=16; } }        // radial: inward=shadow, outward=faint
+    else{
+        ephi=vmul(ephi,1.0/el); double u=1.0/r0, w=-u*(d_r/el); const double uh=1.0/(2.0*M);
+        double phi=0.0, r=r0; int code=1;
+        for(int s=0;s<maxsteps;++s){
+            double k1u=w,k1w=-u+3.0*M*u*u; double u2=u+0.5*dphi*k1u,w2=w+0.5*dphi*k1w; double k2u=w2,k2w=-u2+3.0*M*u2*u2;
+            double u3=u+0.5*dphi*k2u,w3=w+0.5*dphi*k2w; double k3u=w3,k3w=-u3+3.0*M*u3*u3; double u4=u+dphi*k3u,w4=w+dphi*k3w; double k4u=w4,k4w=-u4+3.0*M*u4*u4;
+            u+=(dphi/6.0)*(k1u+2.0*k2u+2.0*k3u+k4u); w+=(dphi/6.0)*(k1w+2.0*k2w+2.0*k3w+k4w); phi+=dphi; r=1.0/u;
+            if(u>=uh){ code=1; break; } if(r>=r_esc && w<0.0){ code=0; break; }
+        }
+        if(code!=1){                                     // escaped -> lensed celestial checker
+            double rp=-w/(u*u);
+            V3 basis=vadd(vmul(er,cos(phi)),vmul(ephi,sin(phi))), dbasis=vadd(vmul(er,-sin(phi)),vmul(ephi,cos(phi)));
+            V3 outv=vnorm(vadd(vmul(basis,rp),vmul(dbasis,r)));
+            double th=atan2(outv.y,outv.x), cc=acos(fmax(-1.0,fmin(1.0,outv.z)));
+            int chk=((int)floor(th*6.0/PI)+(int)floor(cc*6.0/PI))&1;
+            if(chk){ R=176;G=196;B=222; } else { R=30;G=52;B=92; }
+        }
+    }
+    long idx=((long)py*W+px)*3; img[idx]=R; img[idx+1]=G; img[idx+2]=B;
+}
+static void geodesic_render_ppm(const Params& P){
+    const int W=P.width,H=P.height; const double M=P.mass, silR=silhouette_radius(P);
+    double D=4.2*silR, fov=32.0, r_esc=12.0*silR, elev=0.5*M;
+    V3 C=v3(0.0,elev,-D), fwd=vnorm(vsub(v3(0,0,0),C)), right=vnorm(vcross(fwd,v3(0,1,0))), up=vcross(right,fwd);
+    double tanhalf=tan(0.5*fov*PI/180.0);
+    unsigned char* dimg=nullptr; CUDA_OK(cudaMalloc((void**)&dimg,(size_t)W*H*3));
+    dim3 blk(16,16), grd((W+15)/16,(H+15)/16);
+    lens_geo_render_kernel<<<grd,blk>>>(W,H,C,fwd,right,up,tanhalf,M,GEO_DPHI,GEO_STEPS,r_esc,dimg);
+    CUDA_OK(cudaGetLastError()); CUDA_OK(cudaDeviceSynchronize());
+    std::vector<unsigned char> img((size_t)W*H*3); CUDA_OK(cudaMemcpy(img.data(),dimg,(size_t)W*H*3,cudaMemcpyDeviceToHost)); cudaFree(dimg);
+    FILE* f=fopen(P.render_path.c_str(),"wb");
+    if(!f){ fprintf(stderr,"error: cannot open --render path: %s\n",P.render_path.c_str()); std::exit(2); }
+    fprintf(f,"P6\n%d %d\n255\n",W,H); fwrite(img.data(),1,img.size(),f); fclose(f);
 }
 
 // ------------------------------------------------------------------ OptiX RT path (mirror render.cu; PTX embedded)
@@ -246,7 +347,7 @@ static Result compute(const Params& P, std::vector<unsigned char>* renderBuf){
     R.silhouette_radius = silhouette_radius(P);
     R.image_extent = P.extent;
     R.total_pixels = (long long)P.width*(long long)P.height;
-    R.hit_pixels = baseline_hits(P, renderBuf);
+    R.hit_pixels = (P.scene=="bhshadow-geo") ? geodesic_hits(P) : baseline_hits(P, renderBuf);
     R.hit_fraction = (double)R.hit_pixels/(double)R.total_pixels;
     R.area_measured = R.hit_fraction * (2.0*P.extent)*(2.0*P.extent);
     R.area_oracle = area_oracle_of(P);
@@ -265,11 +366,11 @@ static Result compute(const Params& P, std::vector<unsigned char>* renderBuf){
 // ------------------------------------------------------------------ run one config (print + exit code)
 static int run_config(const Params& P, bool do_print, std::string* declared_out){
     std::vector<unsigned char> rbuf;
-    Result R = compute(P, P.render ? &rbuf : nullptr);
+    Result R = compute(P, (P.render && P.scene!="bhshadow-geo") ? &rbuf : nullptr);
     std::string verdict = (R.g_oracle||R.g_rt) ? "fail" : "pass";
     if(declared_out) *declared_out = declared_object(P,R,verdict);
     if(do_print){
-        if(P.render) write_ppm(P,rbuf);
+        if(P.render){ if(P.scene=="bhshadow-geo") geodesic_render_ppm(P); else write_ppm(P,rbuf); }
         if(P.csv){
             FILE* f=fopen(P.csv_path.c_str(),"wb");
             if(!f){ fprintf(stderr,"error: cannot open --csv path: %s\n",P.csv_path.c_str()); std::exit(2); }
@@ -288,10 +389,31 @@ static Params golden_params(){
     Params P; P.scene="bhshadow"; P.mass=1.0; P.width=1024; P.height=1024; P.engine="both";
     P.tol_rt_px=64; P.seed=0; P.json=true; resolve(P); return P;
 }
+static Params golden_params_geo(){
+    Params P; P.scene="bhshadow-geo"; P.mass=1.0; P.width=1024; P.height=1024; P.engine="both";
+    P.tol_rt_px=64; P.seed=0; P.json=true; resolve(P); return P;
+}
+// v1.1.0 second golden (bhshadow-geo) — its OWN hash file, so the v1.0.0 golden stays byte-identical.
+static int check_geo_golden(const std::string& declared, const std::string& envelope){
+    printf("%s\n", envelope.c_str());
+    std::string h = blake2b_hex(declared);
+    std::string frozen; bool found=false;
+    const char* cands[]={"goldens/lens/declared_geo.hash","../../goldens/lens/declared_geo.hash","../../../goldens/lens/declared_geo.hash"};
+    for(const char* c: cands){ FILE* f=fopen(c,"r"); if(f){ char buf[128]={0}; if(fscanf(f,"%127s",buf)==1){ frozen=buf; found=true; } fclose(f); if(found) break; } }
+    if(!found){ fprintf(stderr,"GEO GOLDEN NOT FROZEN (bootstrap) blake2b=%s\n  freeze into goldens/lens/declared_geo.hash\n",h.c_str()); return 0; }
+    if(h==frozen){ fprintf(stderr,"GEO GOLDEN OK blake2b=%s\n",h.c_str()); return 0; }
+    fprintf(stderr,"GEO GOLDEN MISMATCH\n  got  %s\n  want %s\n",h.c_str(),frozen.c_str()); return 1;
+}
 static int run_golden(){
-    Params P=golden_params(); Result R=compute(P,nullptr);
-    std::string verdict=(R.g_oracle||R.g_rt)?"fail":"pass";
-    return golden_check("lens", declared_object(P,R,verdict), full_envelope(P,R,verdict));
+    // v1.0.0 golden (bhshadow silhouette) — UNCHANGED, gated via goldens/lens/declared.hash
+    Params P1=golden_params(); Result R1=compute(P1,nullptr);
+    std::string v1=(R1.g_oracle||R1.g_rt)?"fail":"pass";
+    int e1=golden_check("lens", declared_object(P1,R1,v1), full_envelope(P1,R1,v1));
+    // v1.1.0 golden (bhshadow-geo, geodesic-derived) — gated via goldens/lens/declared_geo.hash
+    Params P2=golden_params_geo(); Result R2=compute(P2,nullptr);
+    std::string v2=(R2.g_oracle||R2.g_rt)?"fail":"pass";
+    int e2=check_geo_golden(declared_object(P2,R2,v2), full_envelope(P2,R2,v2));
+    return (e1==0 && e2==0)?0:1;
 }
 
 // ------------------------------------------------------------------ selftest
@@ -327,6 +449,15 @@ static int run_selftest(){
     { Params P; P.scene="bhshadow"; P.mass=1.0; P.width=256; P.height=256; P.engine="both"; resolve(P);
       std::string a,b; run_config(P,false,&a); run_config(P,false,&b);
       ok &= st("declared identical across 2 runs (RT deterministic)", a==b); }
+    // v1.1.0: bhshadow-geo DERIVES the shadow by geodesic integration; matches the silhouette + oracle
+    { Params P; P.scene="bhshadow-geo"; P.mass=1.0; P.width=256; P.height=256; P.engine="both"; resolve(P);
+      Result R=compute(P,nullptr);
+      ok &= st("geo derives 27piM^2 (no oracle gate)", !R.g_oracle);
+      ok &= st("geo shadow matches OptiX silhouette (RT agrees)", R.rt_agrees==1);
+      ok &= st("geo captured pixels > 0", R.hit_pixels>0); }
+    { Params P; P.scene="bhshadow-geo"; P.mass=1.0; P.width=200; P.height=200; P.engine="baseline"; resolve(P);
+      std::string a,b; run_config(P,false,&a); run_config(P,false,&b);
+      ok &= st("geo declared identical across 2 runs (determinism)", a==b); }
     // gate teeth: an impossibly tight oracle tolerance fires G-ORACLE-MISMATCH -> exit 1
     { Params P; P.scene="sphere"; P.radius=1.0; P.width=64; P.height=64; P.engine="baseline"; resolve(P); P.tol_oracle=1e-9;
       ok &= st("G-ORACLE-MISMATCH fires when forced (exit 1)", run_config(P,false,nullptr)==1); }
@@ -358,7 +489,7 @@ int main(int argc,char** argv){
     if(P.selftest) return run_selftest();
     if(P.golden)   return run_golden();
     // validation (bad input -> exit 2)
-    if(P.scene!="sphere" && P.scene!="bhshadow") die2("--scene must be sphere|bhshadow");
+    if(P.scene!="sphere" && P.scene!="bhshadow" && P.scene!="bhshadow-geo") die2("--scene must be sphere|bhshadow|bhshadow-geo");
     if(P.engine!="baseline" && P.engine!="both")  die2("--engine must be baseline|both");
     if(!(P.radius>0.0)) die2("--radius must be >0");
     if(!(P.mass>0.0))   die2("--mass must be >0");
