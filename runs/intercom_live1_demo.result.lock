@@ -1,0 +1,46 @@
+{
+  "kind": "orrery-intercom-converge-lock",
+  "run": "live1",
+  "status": "converged",
+  "goal": "locate rho where ratchet's Monte-Carlo unwrite probability p_unwrite_mc = 0.50",
+  "hypothesis": "there is a rho in [0.25,0.50] with p_unwrite_mc=0.50 +-0.02 at p=0.2; the falsifier is ratchet itself",
+  "falsifier": {
+    "tool": "ratchet",
+    "tool_contract_version": "1.0.0",
+    "mode": "target",
+    "expect_hash": null,
+    "metric": "p_unwrite_mc",
+    "metric_target": 0.5,
+    "tol": 0.02,
+    "gate_id": null
+  },
+  "champion": {
+    "candidate_id": 3,
+    "by": "zugchatd",
+    "score": 1.0,
+    "verdict": "pass",
+    "params": {
+      "rho": 0.315
+    },
+    "seed": 20260705,
+    "exit_class": "pass",
+    "declared_blake2b": "7032452eea5111ebdc31dee6b531bbb314b387ba1c83164b722b253eebabfadf",
+    "artifact_blake2b": "67e306a942069c34fea77659dd0f57a13faa65c9392b28b83e1a7db5bc7b7a19",
+    "metric_value": 0.49911
+  },
+  "convergence": {
+    "target": 1.0,
+    "k_converge": 3,
+    "no_improve": 3,
+    "spent": 6,
+    "invalid": 0
+  },
+  "controls_pre_registered": null,
+  "provenance": {
+    "gpu_arch": "sm_89",
+    "machine": "PC-2d2a1b7d-05ea-44d3-ae0e-1cfb9c9bb88a",
+    "schema": "1.0.0",
+    "emitted_at": "2026-07-15T02:50:027229Z"
+  },
+  "notes": "This bus coordinates measurements of STRUCTURE; it says nothing about whether anything is ACQUAINTED (qualia). Every experiment it runs measures structure, never experience - III-sealed."
+}

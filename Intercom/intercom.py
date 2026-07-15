@@ -632,12 +632,18 @@ def cmd_board(a):
     rows = con.execute("SELECT * FROM candidates WHERE run=? ORDER BY (score IS NULL), score DESC, id LIMIT ?",
                        (a.run, a.limit or 20)).fetchall()
     if not rows: out("  (no candidates yet)"); return
-    out(f"  {'cand':<7}{'agent':<11}{'score':<9}{'verdict':<9}{'exit':<11}declared_blake2b")
-    out("  " + "-" * 74)
+    show_metric = run["metric"] is not None
+    mcol = (run["metric"] or "")[:14]
+    out(f"  {'cand':<6}{'agent':<11}{'params':<24}" + (f"{mcol:<15}" if show_metric else "")
+        + f"{'score':<9}{'verdict':<9}exit")
+    out("  " + "-" * (78 + (15 if show_metric else 0)))
     for c in rows:
         sc = "-" if c["score"] is None else f"{c['score']:.4f}"
-        out(f"  #{str(c['id']):<6}{c['agent']:<11}{sc:<9}{(c['verdict'] or ''):<9}{(c['exit_class'] or ''):<11}"
-            f"{(c['declared_blake2b'] or '-')[:20]}")
+        mv = "-" if c["metric_value"] is None else f"{c['metric_value']:.4f}"
+        line = f"  #{str(c['id']):<5}{c['agent']:<11}{(c['params'] or '')[:24]:<24}"
+        if show_metric: line += f"{mv:<15}"
+        line += f"{sc:<9}{(c['verdict'] or ''):<9}{c['exit_class'] or ''}"
+        out(line)
 
 def cmd_schedule(a):
     """Allocation: UCB1 over live arms -> which approach to expand next; prune arms the champion dominates."""
