@@ -1,0 +1,11 @@
+# Runtime artifacts of the ORRERY Intercom bus — regenerable, not canon.
+orrery_bus.db
+orrery_bus.db-wal
+orrery_bus.db-shm
+sandbox/
+_demo/
+_test/
+_lab*/
+__pycache__/
+*.pyc
+operator.key
