@@ -55,6 +55,11 @@ code/ideas, don't reinvent the wheel."
 (The selftest golden path never hit it — the live GPU target-mode smoke did. Same value as `mcp`/
 `orreryd`'s pre-commit smokes catching real defects.)
 
+### v1.0.1 (2026-07-14, additive) — `--set key=value` (the R-1 lesson applied)
+`propose --set rho=0.34` and `converge-open --base-set p=0.2` (repeatable, type-inferred int/float/bool/str)
+so subagents NEVER hand-write JSON — the PowerShell JSON-quote escaping footgun that motivated the whole
+`orrery` CLI (R-1). Additive: golden `fb722929` byte-identical; `--params`/`--base-params` JSON still work.
+
 ### Not done yet (ranked; deferred)
 1. **The doorbell** — no push; agents `poll`. Claude Code `Stop`-hook (drain + inject) or a `-wal`
    watcher. The one missing piece for true real-time collab.

@@ -316,6 +316,25 @@ def _load_params(s, file):
         return json.loads(s)
     return {}
 
+def _infer(s):
+    """Type-infer a --set value: int, then float, then bool, else string."""
+    try: return int(s)
+    except ValueError: pass
+    try: return float(s)
+    except ValueError: pass
+    if s.lower() in ("true", "false"): return s.lower() == "true"
+    return s
+
+def _apply_sets(d, sets):
+    """Merge repeatable `--set key=value` pairs (type-inferred) so agents NEVER hand-write JSON
+    (the R-1 lesson: PowerShell JSON-quote escaping is the #1 subagent footgun)."""
+    for item in (sets or []):
+        k, _, v = item.partition("=")
+        if not k or "=" not in item:
+            log(f"[intercom] bad --set '{item}' (want key=value)."); sys.exit(2)
+        d[k.strip()] = _infer(v)
+    return d
+
 # =========================================================================== THE FALSIFIER
 # The heart of the ASIC. The judge is an ORRERY tool run by the COORDINATOR (never the proposer),
 # scored from the tool's DECLARED output. Reuses mcp.do_run_tool (I-12 declared hash + exit-class
@@ -479,6 +498,7 @@ def cmd_converge_open(a):
         base = _load_params(a.base_params, a.base_params_file)
     except Exception as e:
         log(f"[intercom] --base-params is not valid JSON: {e}"); sys.exit(2)
+    _apply_sets(base, a.base_set)                        # --base-set key=value (no JSON needed)
     con.execute("""INSERT OR REPLACE INTO converge_runs
         (id,room,goal,hypothesis,ftool,fmode,base_params,seed,expect_hash,metric,metric_target,tol,band,
          gate_id,controls,target,k_converge,budget,created_by)
@@ -565,6 +585,7 @@ def cmd_propose(a):
         params = _load_params(a.params, a.params_file)
     except Exception as e:
         log(f"[intercom] --params is not valid JSON: {e}"); sys.exit(2)
+    _apply_sets(params, a.set)                          # --set key=value (no JSON needed)
     ensure_membership(con, me, run["room"])
     res = _propose_core(con, run, me, params, a.branch); con.commit()
     log(f"[intercom] propose '{a.run}' cand=#{res['candidate']} "
@@ -1011,6 +1032,8 @@ def build_parser():
     s.add_argument("--mode", required=True, choices=["golden", "target", "gate"])
     s.add_argument("--base-params", dest="base_params", help="JSON merged under every candidate")
     s.add_argument("--base-params-file", dest="base_params_file")
+    s.add_argument("--base-set", dest="base_set", action="append", metavar="K=V",
+                   help="type-inferred base param, repeatable (no JSON needed)")
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--expect-hash", dest="expect_hash", help="mode=golden: frozen declared blake2b")
     s.add_argument("--metric", help="mode=target: result field name")
@@ -1025,6 +1048,8 @@ def build_parser():
     s = sub.add_parser("propose", help="propose a parameterization; the coordinator scores it")
     s.add_argument("--me"); s.add_argument("--run", required=True)
     s.add_argument("--params", help="JSON candidate params"); s.add_argument("--params-file", dest="params_file")
+    s.add_argument("--set", action="append", metavar="K=V",
+                   help="type-inferred candidate param, repeatable (no JSON needed)")
     s.add_argument("--branch"); s.set_defaults(fn=cmd_propose)
     s = sub.add_parser("champion"); s.add_argument("--run", required=True); s.set_defaults(fn=cmd_champion)
     s = sub.add_parser("board"); s.add_argument("--run", required=True); s.add_argument("--limit", type=int, default=0)
