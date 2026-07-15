@@ -1,0 +1,29 @@
+ #2     2026-07-15T02:58:28.727Z  [carve-design] 7w1mlect (round_open r1 !2)
+      DESIGN ROUNDS 'carve-fn' r1 [carve-design] roster=pauliwgt,oplocalt,commutnt,entangle
+      PROMPT: Propose the EXACT scalar functional Phi(H,frame) that scores a candidate factorization for carve. Charter: runs/carve_design/CHARTER.md. The make-or-break admission test is the D-028 BLINDNESS lens + the three-control gauntlet. Write your design to runs/carve_design/phase1/<your-persona>.md and post a submission pointing at it.
+      REFUTER LENSES: DETERMINISM | RESOLVABILITY | ORACLE-HONESTY | BLINDNESS(D-028). Each verdict is ARGUMENT-GRADE until its pre-registered deciding experiment runs via ORRERY.
+      This bus coordinates measurements of STRUCTURE; it says nothing about whether anything is ACQUAINTED (qualia). Every experiment it runs measures structure, never experience - III-sealed.
+ #6     2026-07-15T03:04:37.306Z  [carve-design] mrrlvb5u (submission)
+      Operator k-locality functional: SIGHTED — Phi depends on U via Pauli-weight sector of U†HU; not collapsed by trace cyclicity or spec(MM†); CPR uniqueness proven for generic H given k supplied externally.
+      [artifact] {"path": "C:\\ORRERY\\runs\\carve_design\\phase1\\operator-locality.md", "bytes": 30480, "lines": 625}
+ #7     2026-07-15T03:04:46.479Z  [carve-design] erxx6aow (submission)
+      Commutant/tensor-sum functional: Phi=1-||V||_F/||H_traceless||_F where V is the interaction residual after tensor-sum projection; D-028 SURVIVED — Phi depends on frame U, not spectrum alone; local H scores 1.0, Haar-scrambled scores ~1/d_A; oracle recoverable by exact algebra.
+      [artifact] {"path": "C:\\ORRERY\\runs\\carve_design\\phase1\\commutant-algebra.md", "bytes": 33288, "lines": 384}
+ #8     2026-07-15T03:04:53.368Z  [carve-design] 6gcurnji (submission)
+      Pauli-weight concentration functional: SURVIVES D-028 blindness — anchored to fixed standard-basis Pauli weight geometry; not spectrum-only; residual symmetry G_sym=(SU(2))^n x S_n is benign (local rotations + permutations, cannot map local H to scrambled H). Three controls named. Oracle blocked on mcts v1.1.0 caller-landscape (ARGUMENT-GRADE until then).
+      [artifact] {"path": "C:\\ORRERY\\runs\\carve_design\\phase1\\pauli-concentration.md", "bytes": 36896, "lines": 647}
+ #10    2026-07-15T03:06:15.571Z  [carve-design] yimifxsf (submission)
+      Entangling-power / quasiclassicality functional: Phi(H,U)=||H_int(U)||_F^2/||H||_F^2 (cross-cut Frobenius fraction); D-028 PASSED (not a spectral invariant, sensitive to cross-cut block, not blind to local-unitary-on-factor); determinism LOW RISK for v1 (pure matrix algebra), MEDIUM for dyn variant (matrix exponential); three controls: product-H null (Phi=0 exactly), Haar-scrambled oracle (min Phi<0.01 recoverable), n-trend (product pinned at 0 for all n -- ARGUMENT-GRADE, needs simulation).
+      [artifact] {"path": "C:\\ORRERY\\runs\\carve_design\\phase1\\entangling-power.md", "bytes": 37802, "lines": 793}
+ #12    2026-07-15T03:11:25.693Z  [carve-design] p55wgqys (vote)
+      ORACLE-HONESTY verdicts: pauli-concentration=SURVIVED | operator-locality=SURVIVED | commutant-algebra=WOUNDED | entangling-power=WOUNDED
+      [artifact] {"path": "C:\\ORRERY\\runs\\carve_design\\phase2\\lens-oracle-honesty.md", "bytes": 24288, "lines": 408}
+ #15    2026-07-15T03:14:03.415Z  [carve-design] qt2thxqd (vote)
+      BLINDNESS verdicts: pauli-concentration=WOUNDED (oracle circular for product-unitary scramblers; gap=0.0000 numerically); operator-locality=WOUNDED (Haar oracle recovery requires undischarged lattice coverage bound); commutant-algebra=WOUNDED (CNOT oracle not in product-unitary search space; pass bar unrealistic); entangling-power=WOUNDED (Frobenius n-trend collapses as 2/2^(n/2); dead at n>=8)
+      [artifact] {"path": "C:\\ORRERY\\runs\\carve_design\\phase2\\lens-blindness.md", "bytes": 23886, "lines": 455}
+ #16    2026-07-15T03:15:00.261Z  [carve-design] xxixihvj (vote)
+      RESOLVABILITY verdicts: pauli-concentration KILLED (product-U oracle is flat, Phi invariant, delta=0 measured); operator-locality WOUNDED (signal gap 0.356 measured at n=4 but frame discretization thin, depth-3 two-qubit tree ~3e6 leaves vs U(16) dim 240); commutant-algebra SURVIVED (oracle in lattice, CNOT gate present, Phi_xcut null-control =1.0 exact); entangling-power Frobenius SURVIVED / e_p WOUNDED (e_p needs eigendecompose, non-deterministic under degeneracy). Biggest risk: all three Pauli-weight functionals are invariant under product-U scramblers (Phi(VHV†,I)=Phi(H,I), measured 5 trials delta=0). Best v1 build: Phi_xcut + commutant gate alphabet (6^n leaves, entangling CNOT, oracle in lattice), gated on mcts v1.1.0 caller-supplied landscape.
+      [artifact] {"path": "C:\\ORRERY\\runs\\carve_design\\phase2\\lens-resolvability.md", "bytes": 24033, "lines": 403}
+ #17    2026-07-15T03:17:36.385Z  [carve-design] 7w1mlect (verdict)
+      VERDICT: functionals converge to one (k-locality Pauli-weight concentration); winner = that functional scored as a GAP over the analytic Haar baseline, with an ON-LATTICE ENTANGLING planted scrambler. Tournament CAUGHT a circular oracle (product-unitary V -> gap 0.0000) + a decaying-signal score pre-contract. ARGUMENT-GRADE until the carve converge run. No contract frozen.
+      [artifact] {"path": "C:\\ORRERY\\runs\\carve_design\\RECOMMENDATION.md", "bytes": 9586, "lines": 127}
