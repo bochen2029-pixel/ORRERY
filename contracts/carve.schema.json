@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://finaltheoryofeverything.org/orrery/contracts/carve.schema.json",
+  "title": "carve --json output envelope",
+  "description": "Machine-checkable schema for the carve tool's --json output. Matches contracts/carve.contract.md v1.0.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool", "version", "seed", "params", "result", "verdict", "gates", "notes"],
+  "properties": {
+    "tool": { "const": "carve" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qubits", "k", "hamiltonian", "scrambler_depth", "search_depth", "budget",
+                   "tol", "multi_eps", "recover_tol", "oracle_tol"],
+      "properties": {
+        "qubits": { "type": "integer", "minimum": 2, "maximum": 6 },
+        "k": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "hamiltonian": { "type": "string", "enum": ["planted", "ising", "product", "haar"] },
+        "scrambler_depth": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "search_depth": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "budget": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "tol": { "type": "number", "minimum": 0.0 },
+        "multi_eps": { "type": "number", "minimum": 0.0 },
+        "recover_tol": { "type": "number", "minimum": 0.0 },
+        "oracle_tol": { "type": "number", "minimum": 0.0 }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qubits", "k", "hamiltonian", "haar_baseline", "phi_identity", "phi_best",
+                   "best_gap", "phi_planted", "planted_gap", "recovered", "oracle_dev",
+                   "frames_evaluated", "multi_basin_count", "n_trend"],
+      "properties": {
+        "qubits": { "type": "integer", "minimum": 2 },
+        "k": { "type": "integer", "minimum": 1 },
+        "hamiltonian": { "type": "string", "enum": ["planted", "ising", "product", "haar"] },
+        "haar_baseline": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "phi_identity": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "phi_best": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "best_gap": { "type": "number" },
+        "phi_planted": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "planted_gap": { "type": "number" },
+        "recovered": { "type": "integer", "minimum": 0, "maximum": 1 },
+        "oracle_dev": { "type": "number", "minimum": 0.0 },
+        "frames_evaluated": { "type": "integer", "minimum": 0 },
+        "multi_basin_count": { "type": "integer", "minimum": 0 },
+        "n_trend": { "type": "array", "items": { "type": "number" }, "minItems": 1 }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail"] },
+    "gates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fired", "value", "threshold"],
+        "properties": {
+          "id": { "type": "string", "enum": ["G-NO-BASIN", "G-MULTI-BASIN"] },
+          "fired": { "type": "boolean" },
+          "value": { "type": "number" },
+          "threshold": { "type": "number" }
+        }
+      }
+    },
+    "notes": { "type": "string" }
+  }
+}
