@@ -75,4 +75,8 @@ cmd /c '"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Bu
   discrete gate lattice; the greedy descent can get stuck (a real negative reported honestly, not hidden).
 - **N ≤ 6, host C++** — the `4^N` Pauli expansion is the CUDA case (v1.1 kernel).
 - **No k-sweep**, no arbitrary-H-from-file beyond the built-ins.
+- **Sub-1e-6 tolerances serialize to `0.000000`** in the declared hash (the D-013 `%.6f` domain): `oracle_tol`
+  default `1e-9` shows as `"oracle_tol":0.000000`, so tolerances in `[0, 5e-7)` are indistinguishable in the
+  hash. Inherent to the instrument's canonical serialization, not carve-specific; determinism holds and the
+  golden pins the config. Flagged by both cold-two-pass verifiers (non-blocking). `runs/carve_twopass_verify.md`.
 - Sims prove STRUCTURE, never qualia — the emergent-classicality moral is the science's to draw.
