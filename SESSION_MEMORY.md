@@ -1,4 +1,7 @@
 # ORRERY — SESSION MEMORY / STATUS / CONTINUATION / REHYDRATION
+
+> ⚠️ **STALE (2026-07-10, 8-tool state). SUPERSEDED for current status by `RUN_STATE.md` + `docs/SESSION_HISTORY_2026-07-14.md`.** Since this was written: `lens`·`shoot`·`orrery`·`trace-born`·`carve` shipped and **ORRERY Intercom** (the ASIC agent-tournament bus, D-034) was built — **14 golden-frozen tools + Intercom; Wave 1's make-or-break trio COMPLETE.** The RING-1 hsmi-stab arc below is still accurate history; trust RUN_STATE + git for the live position.
+
 **Written 2026-07-10 13:54 −05:00 (Friday), from inside the hsmi-stab witness session, at save point `87b8730`.**
 
 > **This is the reconstitution pointer + comprehensive project status + continuation prompt + handoff in one**, superseding the 2026-07-05/09 edition of this file (its content is folded in below). Structured by salience (REEL rings): the top is dense and load-bearing; prune from the bottom under pressure. Trust the **files + git** over this narrative — if they disagree, the files are right; update this doc.
